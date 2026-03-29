@@ -376,6 +376,14 @@ struct StoredShortcut: Codable, Equatable {
             return .upArrow
         case "↓":
             return .downArrow
+        case "↖":
+            return .home
+        case "↘":
+            return .end
+        case "⇞":
+            return .pageUp
+        case "⇟":
+            return .pageDown
         case "\t":
             return .tab
         case "\r":
@@ -418,6 +426,18 @@ struct StoredShortcut: Codable, Equatable {
         case "↓":
             guard let scalar = UnicodeScalar(NSDownArrowFunctionKey) else { return nil }
             return String(Character(scalar))
+        case "↖":
+            guard let scalar = UnicodeScalar(NSHomeFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "↘":
+            guard let scalar = UnicodeScalar(NSEndFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇞":
+            guard let scalar = UnicodeScalar(NSPageUpFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇟":
+            guard let scalar = UnicodeScalar(NSPageDownFunctionKey) else { return nil }
+            return String(Character(scalar))
         case "\t":
             return "\t"
         case "\r":
@@ -445,7 +465,10 @@ struct StoredShortcut: Codable, Equatable {
         )
 
         // Avoid recording plain typing; require at least one modifier.
-        if !shortcut.command && !shortcut.shift && !shortcut.option && !shortcut.control {
+        // Home/End/PageUp/PageDown are special keys that can't produce typed text,
+        // so allow them without a modifier (e.g. bare Globe+Arrow).
+        let isNavigationKey = ["↖", "↘", "⇞", "⇟"].contains(key)
+        if !isNavigationKey && !shortcut.command && !shortcut.shift && !shortcut.option && !shortcut.control {
             return nil
         }
         return shortcut
@@ -458,6 +481,10 @@ struct StoredShortcut: Codable, Equatable {
         case 124: return "→" // right arrow
         case 125: return "↓" // down arrow
         case 126: return "↑" // up arrow
+        case 115: return "↖" // Home
+        case 119: return "↘" // End
+        case 116: return "⇞" // Page Up
+        case 121: return "⇟" // Page Down
         case 48: return "\t" // tab
         case 36, 76: return "\r" // return, keypad enter
         case 33: return "["  // kVK_ANSI_LeftBracket

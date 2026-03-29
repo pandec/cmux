@@ -9468,7 +9468,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // Fast path for normal typing and terminal navigation keys (for example Up-arrow
         // history): after command-palette/notification handling and browser omnibar
         // arrow navigation above, plain key events have no app-level shortcut behavior.
-        if normalizedFlags.isEmpty {
+        // Home/End/PageUp/PageDown (keyCodes 115/119/116/121) can be bound as shortcuts,
+        // so let them through to the shortcut matching code below.
+        let isNavigationKeyCode = event.keyCode == 115 || event.keyCode == 119
+            || event.keyCode == 116 || event.keyCode == 121
+        if normalizedFlags.isEmpty && !isNavigationKeyCode {
             return false
         }
 
@@ -10703,6 +10707,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
             return event.keyCode == 36 || event.keyCode == 76
         }
 
+        // Home/End/PageUp/PageDown — match by keyCode directly (like arrow keys).
+        if ["↖", "↘", "⇞", "⇟"].contains(shortcutKey),
+           let expected = keyCodeForShortcutKey(shortcutKey) {
+            return event.keyCode == expected
+        }
+
         let eventCharsIgnoringModifiers = event.charactersIgnoringModifiers
         if shortcutCharacterMatches(
             eventCharacter: eventCharsIgnoringModifiers,
@@ -10920,6 +10930,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         case "→": return 124 // kVK_RightArrow
         case "↓": return 125 // kVK_DownArrow
         case "↑": return 126 // kVK_UpArrow
+        case "↖": return 115 // kVK_Home
+        case "↘": return 119 // kVK_End
+        case "⇞": return 116 // kVK_PageUp
+        case "⇟": return 121 // kVK_PageDown
         default:
             return nil
         }
