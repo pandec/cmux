@@ -1542,6 +1542,14 @@ struct ShortcutStroke: Equatable, Hashable {
             return .upArrow
         case "↓":
             return .downArrow
+        case "↖":
+            return .home
+        case "↘":
+            return .end
+        case "⇞":
+            return .pageUp
+        case "⇟":
+            return .pageDown
         case "\r":
             return KeyEquivalent(Character("\r"))
         default:
@@ -1588,6 +1596,18 @@ struct ShortcutStroke: Equatable, Hashable {
             return String(Character(scalar))
         case "↓":
             guard let scalar = UnicodeScalar(NSDownArrowFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "↖":
+            guard let scalar = UnicodeScalar(NSHomeFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "↘":
+            guard let scalar = UnicodeScalar(NSEndFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇞":
+            guard let scalar = UnicodeScalar(NSPageUpFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇟":
+            guard let scalar = UnicodeScalar(NSPageDownFunctionKey) else { return nil }
             return String(Character(scalar))
         case "\r":
             return "\r"
@@ -1709,6 +1729,12 @@ struct ShortcutStroke: Equatable, Hashable {
             return keyCode == 36 || keyCode == 76
         }
 
+        // Home/End/PageUp/PageDown are function keys; match by keyCode directly.
+        if let expectedKeyCode = Self.keyCodeForShortcutKey(shortcutKey),
+           (expectedKeyCode == 115 || expectedKeyCode == 119 || expectedKeyCode == 116 || expectedKeyCode == 121) {
+            return keyCode == expectedKeyCode
+        }
+
         if Self.shortcutCharacterMatches(
             eventCharacter: eventCharacter,
             shortcutKey: shortcutKey,
@@ -1768,8 +1794,8 @@ struct ShortcutStroke: Equatable, Hashable {
         return false
     }
 
-    private var isBareShortcutAllowedWithoutModifier: Bool {
-        Self.usesDirectKeyCodeMatching(key)
+    fileprivate var isBareShortcutAllowedWithoutModifier: Bool {
+        Self.usesDirectKeyCodeMatching(key) || Self.isHomeEndPageKey(key)
     }
 
     private static func recordableKey(from event: NSEvent) -> RecordableKey? {
@@ -2010,6 +2036,10 @@ struct ShortcutStroke: Equatable, Hashable {
         case "→": return 124
         case "↓": return 125
         case "↑": return 126
+        case "↖": return 115 // home
+        case "↘": return 119 // end
+        case "⇞": return 116 // page up
+        case "⇟": return 121 // page down
         default:
             return nil
         }
@@ -2029,6 +2059,10 @@ struct ShortcutStroke: Equatable, Hashable {
         default:
             return usesDirectKeyCodeMatching(key)
         }
+    }
+
+    private static func isHomeEndPageKey(_ key: String) -> Bool {
+        key == "↖" || key == "↘" || key == "⇞" || key == "⇟"
     }
 
     private static func functionKeyDisplayString(for key: String) -> String? {
@@ -2100,7 +2134,7 @@ struct ShortcutStroke: Equatable, Hashable {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17,
         18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
         33, 34, 35, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
-        50, 123, 124, 125, 126,
+        50, 115, 116, 119, 121, 123, 124, 125, 126,
     ]
 }
 
@@ -2406,6 +2440,14 @@ extension ShortcutStroke {
             return "↑"
         case "down", "arrowdown", "downarrow", "↓":
             return "↓"
+        case "home", "↖":
+            return "↖"
+        case "end", "↘":
+            return "↘"
+        case "pageup", "page_up", "⇞":
+            return "⇞"
+        case "pagedown", "page_down", "⇟":
+            return "⇟"
         case "tab":
             return "\t"
         case "return", "enter", "↩":
@@ -2479,7 +2521,7 @@ extension StoredShortcut {
         guard parsedStrokes.count == strokes.count, let firstStroke = parsedStrokes.first else {
             return nil
         }
-        guard allowBareFirstStroke || !firstStroke.modifierFlags.isEmpty || firstStroke.key == "space" else { return nil }
+        guard allowBareFirstStroke || !firstStroke.modifierFlags.isEmpty || firstStroke.isBareShortcutAllowedWithoutModifier else { return nil }
         let secondStroke = parsedStrokes.count == 2 ? parsedStrokes[1] : nil
         return StoredShortcut(first: firstStroke, second: secondStroke)
     }
