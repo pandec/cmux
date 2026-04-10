@@ -10899,7 +10899,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         // Fast path for normal typing and terminal navigation keys (for example Up-arrow
         // history): after command-palette/notification handling and browser omnibar
         // arrow navigation above, plain key events have no app-level shortcut behavior.
-        if normalizedFlags.isEmpty && activeConfiguredShortcutChordPrefixForCurrentEvent == nil {
+        // Exception: Home/End/PageUp/PageDown (keyCodes 115/119/116/121) may be bound
+        // as bare shortcuts without any modifier, so let them pass through.
+        let isHomeEndPageKey = event.keyCode == 115 || event.keyCode == 119
+            || event.keyCode == 116 || event.keyCode == 121
+        if normalizedFlags.isEmpty && activeConfiguredShortcutChordPrefixForCurrentEvent == nil
+            && !isHomeEndPageKey {
             return false
         }
 
@@ -12394,6 +12399,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             .subtracting([.numericPad, .function])
         return event.keyCode == keyCode && flags == stroke.modifierFlags
+    }
+
+    /// Match Home/End/PageUp/PageDown shortcuts using keyCode.
+    /// Like arrow keys, these include .numericPad and .function in their modifierFlags.
+    private func matchHomeEndPageShortcut(event: NSEvent, stroke: ShortcutStroke, keyCode: UInt16) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            .subtracting([.numericPad, .function])
+        return event.keyCode == keyCode && flags == stroke.modifierFlags
+    }
+
+    private func matchConfiguredHomeEndPageShortcut(
+        event: NSEvent,
+        action: KeyboardShortcutSettings.Action,
+        keyGlyph: String,
+        keyCode: UInt16
+    ) -> Bool {
+        let shortcut = KeyboardShortcutSettings.shortcut(for: action)
+        if let prefix = activeConfiguredShortcutChordPrefixForCurrentEvent {
+            guard let secondStroke = shortcut.secondStroke,
+                  shortcut.firstStroke == prefix else {
+                return false
+            }
+            let stroke = secondStroke
+            if stroke.key == keyGlyph {
+                return matchHomeEndPageShortcut(event: event, stroke: stroke, keyCode: keyCode)
+            }
+            return matchShortcutStroke(event: event, stroke: stroke)
+        }
+        guard !shortcut.hasChord else { return false }
+        let stroke = shortcut.firstStroke
+        if stroke.key == keyGlyph {
+            return matchHomeEndPageShortcut(event: event, stroke: stroke, keyCode: keyCode)
+        }
+        return matchShortcutStroke(event: event, stroke: stroke)
     }
 
     /// Match tab key shortcuts using keyCode 48

@@ -907,6 +907,14 @@ struct ShortcutStroke: Equatable {
             return .upArrow
         case "↓":
             return .downArrow
+        case "↖":
+            return .home
+        case "↘":
+            return .end
+        case "⇞":
+            return .pageUp
+        case "⇟":
+            return .pageDown
         case "\t":
             return .tab
         case "\r":
@@ -948,6 +956,18 @@ struct ShortcutStroke: Equatable {
             return String(Character(scalar))
         case "↓":
             guard let scalar = UnicodeScalar(NSDownArrowFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "↖":
+            guard let scalar = UnicodeScalar(NSHomeFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "↘":
+            guard let scalar = UnicodeScalar(NSEndFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇞":
+            guard let scalar = UnicodeScalar(NSPageUpFunctionKey) else { return nil }
+            return String(Character(scalar))
+        case "⇟":
+            guard let scalar = UnicodeScalar(NSPageDownFunctionKey) else { return nil }
             return String(Character(scalar))
         case "\t":
             return "\t"
@@ -998,7 +1018,13 @@ struct ShortcutStroke: Equatable {
 
         if requireModifier,
            !stroke.command && !stroke.shift && !stroke.option && !stroke.control {
-            return nil
+            // Home, End, PageUp, PageDown cannot produce typed text, so allow
+            // recording them as bare shortcuts without a modifier key.
+            let isNavigationKey = event.keyCode == 115 || event.keyCode == 119
+                || event.keyCode == 116 || event.keyCode == 121
+            if !isNavigationKey {
+                return nil
+            }
         }
         return stroke
     }
@@ -1032,6 +1058,12 @@ struct ShortcutStroke: Equatable {
         let shortcutKey = key.lowercased()
         if shortcutKey == "\r" {
             return keyCode == 36 || keyCode == 76
+        }
+
+        // Home/End/PageUp/PageDown are function keys; match by keyCode directly.
+        if let expectedKeyCode = Self.keyCodeForShortcutKey(shortcutKey),
+           (expectedKeyCode == 115 || expectedKeyCode == 119 || expectedKeyCode == 116 || expectedKeyCode == 121) {
+            return keyCode == expectedKeyCode
         }
 
         if Self.shortcutCharacterMatches(
@@ -1103,6 +1135,10 @@ struct ShortcutStroke: Equatable {
         case 124: return "→" // right arrow
         case 125: return "↓" // down arrow
         case 126: return "↑" // up arrow
+        case 115: return "↖" // home
+        case 119: return "↘" // end
+        case 116: return "⇞" // page up
+        case 121: return "⇟" // page down
         case 48: return "\t" // tab
         case 36, 76: return "\r" // return, keypad enter
         case 33: return "["  // kVK_ANSI_LeftBracket
@@ -1241,6 +1277,10 @@ struct ShortcutStroke: Equatable {
         case "→": return 124
         case "↓": return 125
         case "↑": return 126
+        case "↖": return 115 // home
+        case "↘": return 119 // end
+        case "⇞": return 116 // page up
+        case "⇟": return 121 // page down
         default:
             return nil
         }
