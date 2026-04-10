@@ -10062,10 +10062,10 @@ struct VerticalTabsSidebar: View {
                         .frame(height: trafficLightPadding)
                         .background(TitlebarDoubleClickMonitorView())
                 }
-                .overlay(alignment: .topLeading) {
+                .overlay(alignment: .topTrailing) {
                     if isMinimalMode {
                         HiddenTitlebarSidebarControlsView(notificationStore: notificationStore)
-                            .padding(.leading, hiddenTitlebarControlsLeadingInset)
+                            .padding(.trailing, 4)
                             .padding(.top, 2)
                     }
                 }
@@ -12731,7 +12731,7 @@ private struct TabItemView: View, Equatable {
         }()
 
         VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 8) {
+            HStack(spacing: 4) {
                 if unreadCount > 0 {
                     ZStack {
                         Circle()
@@ -12983,7 +12983,8 @@ private struct TabItemView: View, Equatable {
         .animation(.easeInOut(duration: 0.2), value: tab.logEntries.count)
         .animation(.easeInOut(duration: 0.2), value: tab.progress != nil)
         .animation(.easeInOut(duration: 0.2), value: tab.metadataBlocks.count)
-        .padding(.horizontal, 10)
+        .padding(.leading, 8)
+        .padding(.trailing, 4)
         .padding(.vertical, 8)
         .background(
             RoundedRectangle(cornerRadius: 6)

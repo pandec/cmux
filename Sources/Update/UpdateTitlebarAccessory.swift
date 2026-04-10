@@ -551,7 +551,6 @@ struct HiddenTitlebarSidebarControlsView: View {
     @ObservedObject var notificationStore: TerminalNotificationStore
     @StateObject private var viewModel = TitlebarControlsViewModel()
 
-    private let hostWidth: CGFloat = 124
     private let hostHeight: CGFloat = 28
 
     var body: some View {
@@ -568,7 +567,8 @@ struct HiddenTitlebarSidebarControlsView: View {
             onNewTab: { _ = AppDelegate.shared?.tabManager?.addTab() },
             visibilityMode: .onHover
         )
-        .frame(width: hostWidth, height: hostHeight, alignment: .leading)
+        .fixedSize(horizontal: true, vertical: false)
+        .frame(height: hostHeight)
     }
 }
 
