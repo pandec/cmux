@@ -17,6 +17,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 GHOSTTY_DIR="$REPO_ROOT/ghostty"
 
+# shellcheck source=lib/prefer-zig-0.15.sh
+source "$SCRIPT_DIR/lib/prefer-zig-0.15.sh"
+
 OUTPUT_PATH=""
 TARGET_TRIPLE=""
 UNIVERSAL="false"

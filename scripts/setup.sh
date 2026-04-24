@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
+# shellcheck source=lib/prefer-zig-0.15.sh
+source "$SCRIPT_DIR/lib/prefer-zig-0.15.sh"
+
 cd "$PROJECT_DIR"
 
 echo "==> Initializing submodules..."

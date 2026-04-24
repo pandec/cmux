@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# shellcheck source=lib/prefer-zig-0.15.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/prefer-zig-0.15.sh"
+
 APP_NAME="cmux DEV"
 BUNDLE_ID="com.cmuxterm.app.debug"
 BASE_APP_NAME="cmux DEV"
