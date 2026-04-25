@@ -124,6 +124,37 @@ When migrating from one tagged build to another (e.g., `my-dev` -> `local`):
 4. Set `showSidebarDevBuildBanner` to false for the target domain
 5. Launch the target build: `./scripts/reload.sh --tag local --launch`
 
+## Cross-machine Sync
+
+For moving the `local`-tag config (UserDefaults + open workspaces + settings.json) between machines, use `scripts/sync-local-config.sh`. The snapshot is committed to `tmp-sync/` on `dev/local`.
+
+**Source machine (capture state):**
+
+```bash
+./scripts/sync-local-config.sh snapshot
+git add tmp-sync/ && git commit -m "Sync local tag config" && git push origin dev/local
+```
+
+**Target machine (restore state):**
+
+```bash
+git fetch && git checkout dev/local && git pull
+# Quit cmux DEV local first if running — overwrites session on quit
+./scripts/sync-local-config.sh apply
+./scripts/reload.sh --tag local --launch
+```
+
+**First-time setup on a new Mac:**
+
+```bash
+brew install zig git              # + Xcode from App Store
+./scripts/setup.sh                # submodules + GhosttyKit (5–10 min, watch for the zig tag issue above)
+./scripts/sync-local-config.sh apply
+./scripts/reload.sh --tag local --launch
+```
+
+Script defaults to tag `local`. Override with `CMUX_SYNC_TAG=<tag>`.
+
 ## Current Custom Changes on dev/local
 
 As of 2026-04-10, dev/local carries these changes on top of main:
