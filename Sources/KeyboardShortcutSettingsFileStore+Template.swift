@@ -91,6 +91,7 @@ extension CmuxSettingsFileStore {
                     "tabBarVisibility": AppCatalogSection().tabBarVisibility.defaultValue.rawValue,
                     "renameSelectsExistingName": AppCatalogSection().renameSelectsExistingName.defaultValue,
                     "commandPaletteSearchesAllSurfaces": AppCatalogSection().commandPaletteSearchesAllSurfaces.defaultValue,
+                    "surfaceCycleOrder": AppCatalogSection().surfaceCycleOrder.defaultValue.rawValue,
                 ],
             ],
             [

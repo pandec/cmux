@@ -41,6 +41,7 @@ extension CmuxSettingsFileStore {
         "app.tabBarVisibility",
         "app.renameSelectsExistingName",
         "app.commandPaletteSearchesAllSurfaces",
+        "app.surfaceCycleOrder",
         "workspaceGroups.newWorkspacePlacement",
         "terminal.adaptiveDefaultTheme",
         "terminal.showScrollBar",
