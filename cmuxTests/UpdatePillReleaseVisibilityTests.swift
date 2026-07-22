@@ -566,6 +566,14 @@ struct TitlebarControlsHoverPolicyTests {
             )
             checkEqual(compactRanges.count, 1)
             let compactLane = try #require(compactRanges.first)
+            checkLessThanOrEqual(
+                compactLane.lowerBound + config.buttonSize,
+                MinimalModeSidebarTitlebarControlsLayout.hostWidth(
+                    presentation: .compact,
+                    config: config
+                ),
+                "Expected the visible compact menu button to fit its hit lane inside the host"
+            )
             checkEqual(
                 TitlebarControlsHitRegions.sidebarActionSlot(
                     at: NSPoint(x: compactLane.lowerBound + 1, y: 14),

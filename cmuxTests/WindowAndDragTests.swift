@@ -983,6 +983,12 @@ final class WindowDragHandleHitTests: XCTestCase {
         XCTAssertEqual(compactButton.accessibilityIdentifier(), "titlebarControl.compactMenu")
         XCTAssertEqual(compactButton.accessibilityRole(), .menuButton)
         XCTAssertTrue(compactButton.accessibilityPerformPress())
+
+        target.compactMenuAccessibilityValue = "3 unread notifications"
+        XCTAssertEqual(compactButton.accessibilityValue() as? String, "3 unread notifications")
+
+        target.exposesAccessibility = false
+        XCTAssertEqual(target.accessibilityChildren()?.count, 0)
     }
 
     func testDragHandleYieldsToRegisteredMinimalModeSidebarButtonColumns() {

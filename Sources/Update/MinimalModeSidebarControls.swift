@@ -63,6 +63,8 @@ struct MinimalModeSidebarControlActionProxyView: NSViewRepresentable {
     var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
     var isEnabled = true
     var requiresRevealedState = false
+    var exposesAccessibility = true
+    var compactMenuAccessibilityValue: String?
     let onAction: (MinimalModeSidebarControlActionSlot, NSView, NSPoint) -> Void
 
     func makeNSView(context: Context) -> MinimalModeSidebarControlActionView {
@@ -80,6 +82,8 @@ struct MinimalModeSidebarControlActionProxyView: NSViewRepresentable {
         view.presentation = presentation
         view.isEnabled = isEnabled
         view.requiresRevealedState = requiresRevealedState
+        view.exposesAccessibility = exposesAccessibility
+        view.compactMenuAccessibilityValue = compactMenuAccessibilityValue
         view.onAction = onAction
     }
 }
@@ -178,22 +182,46 @@ enum TitlebarControlsHitRegions {
 final class MinimalModeSidebarControlActionView: NSView {
     var config = TitlebarControlsStyle.classic.config
     {
-        didSet { needsLayout = true }
+        didSet {
+            guard config != oldValue else { return }
+            needsLayout = true
+        }
     }
     var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
     {
         didSet {
+            guard presentation != oldValue else { return }
             needsLayout = true
             syncButtons()
         }
     }
     var isEnabled = true
     {
-        didSet { syncButtons() }
+        didSet {
+            guard isEnabled != oldValue else { return }
+            syncButtons()
+        }
     }
     var requiresRevealedState = false
     {
-        didSet { syncButtons() }
+        didSet {
+            guard requiresRevealedState != oldValue else { return }
+            syncButtons()
+        }
+    }
+    var exposesAccessibility = true
+    {
+        didSet {
+            guard exposesAccessibility != oldValue else { return }
+            syncButtons()
+        }
+    }
+    var compactMenuAccessibilityValue: String?
+    {
+        didSet {
+            guard compactMenuAccessibilityValue != oldValue else { return }
+            syncButtons()
+        }
     }
     var telemetryPrefix = "minimalSidebarClickProxy"
     var onAction: ((MinimalModeSidebarControlActionSlot, NSView, NSPoint) -> Void)?
@@ -250,7 +278,7 @@ final class MinimalModeSidebarControlActionView: NSView {
         button.identifier = NSUserInterfaceItemIdentifier(slot.accessibilityIdentifier)
         button.setAccessibilityIdentifier(slot.accessibilityIdentifier)
         button.setAccessibilityLabel(slot.accessibilityLabel)
-        button.setAccessibilityRole(slot == .compactMenu ? .popUpButton : .button)
+        button.setAccessibilityRole(slot == .compactMenu ? .menuButton : .button)
         return button
     }
 
@@ -261,7 +289,7 @@ final class MinimalModeSidebarControlActionView: NSView {
     }
 
     override func accessibilityChildren() -> [Any]? {
-        guard isRevealed || !requiresRevealedState else { return [] }
+        guard exposesAccessibility, isEnabled else { return [] }
         return MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation).compactMap { buttons[$0] }
     }
 
@@ -417,13 +445,13 @@ final class MinimalModeSidebarControlActionView: NSView {
     }
 
     private func syncButtons() {
-        let revealed = isRevealed
         let visibleSlots = Set(MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation))
         for (slot, button) in buttons {
             let isVisible = visibleSlots.contains(slot)
             button.isHidden = !isVisible
-            button.isEnabled = isVisible && isEnabled && (revealed || !requiresRevealedState)
-            button.setAccessibilityElement(isVisible && (revealed || !requiresRevealedState))
+            button.isEnabled = isVisible && isEnabled
+            button.setAccessibilityElement(isVisible && isEnabled && exposesAccessibility)
+            button.setAccessibilityValue(slot == .compactMenu ? compactMenuAccessibilityValue : nil)
         }
     }
 
@@ -464,7 +492,7 @@ private final class MinimalModeSidebarControlButton: NSButton {
     }
 
     override func accessibilityRole() -> NSAccessibility.Role? {
-        slot == .compactMenu ? .popUpButton : .button
+        slot == .compactMenu ? .menuButton : .button
     }
 
     override func mouseDown(with event: NSEvent) {
