@@ -1,5 +1,4 @@
 import AppKit
-import Combine
 import CmuxTestSupport
 import SwiftUI
 
@@ -202,12 +201,6 @@ final class MinimalModeSidebarControlActionView: NSView {
         }
     }
     var requiresRevealedState = false
-    {
-        didSet {
-            guard requiresRevealedState != oldValue else { return }
-            syncButtons()
-        }
-    }
     var exposesAccessibility = true
     {
         didSet {
@@ -224,7 +217,6 @@ final class MinimalModeSidebarControlActionView: NSView {
     }
     var telemetryPrefix = "minimalSidebarClickProxy"
     var onAction: ((MinimalModeSidebarControlActionSlot, NSView, NSPoint) -> Void)?
-    private var cancellables: Set<AnyCancellable> = []
     private let buttons: [MinimalModeSidebarControlActionSlot: MinimalModeSidebarControlButton]
 
     override init(frame frameRect: NSRect) {
@@ -241,7 +233,6 @@ final class MinimalModeSidebarControlActionView: NSView {
             button.setAccessibilityParent(self)
             addSubview(button)
         }
-        observeRevealState()
         syncButtons()
     }
 
@@ -260,7 +251,6 @@ final class MinimalModeSidebarControlActionView: NSView {
             button.setAccessibilityParent(self)
             addSubview(button)
         }
-        observeRevealState()
         syncButtons()
     }
 
@@ -429,18 +419,6 @@ final class MinimalModeSidebarControlActionView: NSView {
             MinimalModeSidebarChromeHoverState.shared.setHovering(true, windowNumber: window.windowNumber)
         }
         onAction?(slot, anchorView, locationInWindow)
-    }
-
-    private func observeRevealState() {
-        MinimalModeSidebarChromeHoverState.shared.$hoveredWindowNumber
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.syncButtons() }
-            .store(in: &cancellables)
-
-        NotificationsPopoverVisibilityState.shared.$shownWindowNumbers
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.syncButtons() }
-            .store(in: &cancellables)
     }
 
     private func syncButtons() {
