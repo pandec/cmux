@@ -43,6 +43,7 @@ extension CmuxSettingsFileStore {
         "app.tabBarVisibility",
         "app.renameSelectsExistingName",
         "app.commandPaletteSearchesAllSurfaces",
+        "app.surfaceCycleOrder",
         "workspaceGroups.newWorkspacePlacement",
         "sleepyMode.theme",
         "sleepyMode.mascot",
