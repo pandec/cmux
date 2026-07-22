@@ -222082,6 +222082,40 @@
         }
       }
     },
+    "titlebar.moreControls.accessibilityLabel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More Controls"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "その他のコントロール"
+          }
+        }
+      }
+    },
+    "titlebar.moreControls.tooltip": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show titlebar controls"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タイトルバーのコントロールを表示"
+          }
+        }
+      }
+    },
     "titlebar.newWorkspace.accessibilityLabel": {
       "extractionState": "manual",
       "localizations": {
