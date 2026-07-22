@@ -2642,6 +2642,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
     let bonsplitController: BonsplitController
     /// Process/window composition capability registry shared with every pane target.
     let tabDragTransferRegistry: TabDragTransferRegistry
+    let surfaceCycleModel = SurfaceCycleModel()
 
     /// Backing store for `dockSplit`, created on first access. Kept optional so
     /// workspace teardown can tear down the Dock only when it was actually used
@@ -11270,6 +11271,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
         previousHostedView: GhosttySurfaceScrollView? = nil,
         trigger: FocusPanelTrigger = .standard,
         focusIntent: PanelFocusIntent? = nil,
+        resumeHibernatedAgent: Bool = true,
         focusTransactionId: UUID? = nil
     ) {
         guard !remoteTmuxMirrorInterceptsFocusPanel(panelId, previousHostedView: previousHostedView, trigger: trigger, focusIntent: focusIntent) else { return }
@@ -11353,6 +11355,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                     inPane: targetPaneId,
                     reassertAppKitFocus: false,
                     focusIntent: activationIntent,
+                    resumeHibernatedAgent: resumeHibernatedAgent,
                     focusTransactionId: effectiveFocusTransactionId,
                     previousTerminalHostedView: previousTerminalHostedView
                 )
@@ -11391,7 +11394,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                 inPane: targetPaneId,
                 reassertAppKitFocus: !shouldSuppressReentrantRefocus,
                 focusIntent: activationIntent,
-                resumeHibernatedAgent: true,
+                resumeHibernatedAgent: resumeHibernatedAgent,
                 focusTransactionId: effectiveFocusTransactionId,
                 previousTerminalHostedView: previousTerminalHostedView
             )
@@ -13472,6 +13475,7 @@ extension Workspace: BonsplitDelegate {
         }
         gitBranch = panelGitBranches[panelId]
         pullRequest = panelPullRequests[panelId]
+        surfaceCycleModel.recordFocus(panelId)
 
         // Broadcast the focus change. This is deferred + coalesced (not posted
         // synchronously) so the `@Published` mutations above settle before any
@@ -14013,6 +14017,7 @@ extension Workspace: BonsplitDelegate {
         )
         if !isDetaching {
             owningTabManager?.invalidateFocusHistoryTarget(workspaceId: id, panelId: panelId)
+            surfaceCycleModel.forget(panelId)
         }
         syncRemotePortScanTTYs()
         recomputeListeningPorts()
@@ -14209,6 +14214,7 @@ extension Workspace: BonsplitDelegate {
                 )
                 if !isDetachingCloseTransaction {
                     owningTabManager?.invalidateFocusHistoryTarget(workspaceId: id, panelId: panelId)
+                    surfaceCycleModel.forget(panelId)
                 }
             }
 

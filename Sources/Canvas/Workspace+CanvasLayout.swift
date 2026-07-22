@@ -210,7 +210,7 @@ extension Workspace {
         return true
     }
 
-    private func selectableCanvasSurfaceIds() -> [UUID] {
+    func selectableCanvasSurfaceIds() -> [UUID] {
         let canvasPanelIds = Set(canvasModel.layout.allPanelIds.map(\.rawValue))
         return orderedPanelIds.filter { canvasPanelIds.contains($0) && panels[$0] != nil }
     }
