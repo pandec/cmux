@@ -126,7 +126,7 @@ enum TitlebarControlsStyle: Int, CaseIterable, Identifiable {
     }
 }
 
-struct TitlebarControlsStyleConfig {
+struct TitlebarControlsStyleConfig: Equatable {
     let spacing: CGFloat
     let iconSize: CGFloat
     let buttonSize: CGFloat
@@ -1494,7 +1494,8 @@ struct HiddenTitlebarSidebarControlsView: View {
             MinimalModeSidebarControlActionProxyView(
                 config: style.config,
                 presentation: presentation,
-                requiresRevealedState: true
+                requiresRevealedState: true,
+                compactMenuAccessibilityValue: compactMenuAccessibilityValue
             ) { slot, anchorView, locationInWindow in
                 guard let window = anchorView.window else { return }
                 AppDelegate.shared?.performMinimalModeSidebarControlAction(
@@ -1572,11 +1573,27 @@ struct HiddenTitlebarSidebarControlsView: View {
             }
         }
         .background(TitlebarControlAnchorView { compactMenuAnchorView = $0 })
+        .padding(
+            .leading,
+            TitlebarControlsHitRegions.buttonXRange(for: .compactMenu, config: config)?.lowerBound ?? 0
+        )
         .safeHelp(
             String(
                 localized: "titlebar.moreControls.tooltip",
                 defaultValue: "Show titlebar controls"
             )
+        )
+    }
+
+    private var compactMenuAccessibilityValue: String? {
+        let unreadCount = notificationStore.unreadCount
+        guard unreadCount > 0 else { return nil }
+        if unreadCount == 1 {
+            return String(localized: "statusMenu.unreadCount.one", defaultValue: "1 unread notification")
+        }
+        return String(
+            localized: "statusMenu.unreadCount.other",
+            defaultValue: "\(unreadCount) unread notifications"
         )
     }
 }
