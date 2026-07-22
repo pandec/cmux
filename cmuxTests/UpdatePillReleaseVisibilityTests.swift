@@ -431,6 +431,76 @@ struct TitlebarControlsSizingPolicyTests {
 @Suite
 struct TitlebarControlsHoverPolicyTests {
     @Test
+    func testNarrowSidebarUsesOnlyCompactMenuHitLane() {
+        for style in TitlebarControlsStyle.allCases {
+            let config = style.config
+            let minimumExpandedWidth = MinimalModeSidebarTitlebarControlsLayout.minimumExpandedSidebarWidth(
+                config: config,
+                leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+            )
+
+            checkEqual(
+                MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: minimumExpandedWidth,
+                    config: config,
+                    leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                ),
+                .expanded
+            )
+            checkEqual(
+                MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: minimumExpandedWidth - 1,
+                    config: config,
+                    leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                ),
+                .compact
+            )
+
+            let compactRanges = TitlebarControlsHitRegions.buttonXRanges(
+                config: config,
+                presentation: .compact
+            )
+            checkEqual(compactRanges.count, 1)
+            let compactLane = try! #require(compactRanges.first)
+            checkEqual(
+                TitlebarControlsHitRegions.sidebarActionSlot(
+                    at: NSPoint(x: compactLane.lowerBound + 1, y: 14),
+                    config: config,
+                    presentation: .compact
+                ),
+                .compactMenu
+            )
+
+            let expandedNewTabLane = try! #require(
+                TitlebarControlsHitRegions.buttonXRange(for: .newTab, config: config)
+            )
+            checkEqual(
+                TitlebarControlsHitRegions.sidebarActionSlot(
+                    at: NSPoint(x: expandedNewTabLane.lowerBound + 1, y: 14),
+                    config: config,
+                    presentation: .compact
+                ),
+                nil
+            )
+        }
+    }
+
+    @Test
+    func testCompactMenuFitsForkMinimumSidebarWidth() {
+        for style in TitlebarControlsStyle.allCases {
+            let compactTrailingEdge = MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                + MinimalModeSidebarTitlebarControlsLayout.hostWidth(
+                    presentation: .compact,
+                    config: style.config
+                )
+            checkLessThanOrEqual(
+                compactTrailingEdge,
+                CGFloat(SessionPersistencePolicy.minimumSidebarWidth)
+            )
+        }
+    }
+
+    @Test
     func testHoverTrackingEnabledForEveryTitlebarStyle() {
         for style in TitlebarControlsStyle.allCases {
             checkTrue(
