@@ -151,6 +151,7 @@ final class SidebarLazyLayoutScaleTests {
             onToggleSidebar: {},
             onNewTab: {},
             observedWindowReference: WeakWindowReference(),
+            isFullScreen: false,
             selection: .constant(.tabs),
             selectedTabIds: .constant([]),
             lastSidebarSelectionIndex: .constant(nil),

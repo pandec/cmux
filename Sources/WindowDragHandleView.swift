@@ -687,6 +687,9 @@ struct MinimalModeTitlebarDebugSnapshot: Equatable {
 }
 
 enum MinimalModeSidebarTitlebarControlsMetrics {
+    static let compactTrafficLightSpacing: CGFloat = 4
+    static let compactFullscreenLeadingInset: CGFloat = 4
+
     static var leadingInset: CGFloat {
         leadingInset()
     }
@@ -697,6 +700,29 @@ enum MinimalModeSidebarTitlebarControlsMetrics {
 
     static func leadingInset(defaults: UserDefaults = .standard) -> CGFloat {
         MinimalModeTitlebarDebugSettings.leftControlsLeadingInset(defaults: defaults)
+    }
+
+    static func resolvedLeadingInset(
+        configuredLeadingInset: CGFloat,
+        presentation: MinimalModeSidebarTitlebarControlsPresentation,
+        hasTrafficLights: Bool
+    ) -> CGFloat {
+        guard presentation == .compact else { return configuredLeadingInset }
+        return hasTrafficLights
+            ? configuredLeadingInset + compactTrafficLightSpacing
+            : compactFullscreenLeadingInset
+    }
+
+    static func resolvedLeadingInset(
+        presentation: MinimalModeSidebarTitlebarControlsPresentation,
+        hasTrafficLights: Bool,
+        defaults: UserDefaults = .standard
+    ) -> CGFloat {
+        resolvedLeadingInset(
+            configuredLeadingInset: leadingInset(defaults: defaults),
+            presentation: presentation,
+            hasTrafficLights: hasTrafficLights
+        )
     }
 
     static func topInset(defaults: UserDefaults = .standard) -> CGFloat {
@@ -787,7 +813,11 @@ func minimalModeSidebarTitlebarControlsFrame(
             : max(0, contentBounds.maxY - hostHeight - topInset)
     }
     return NSRect(
-        x: MinimalModeSidebarTitlebarControlsMetrics.leadingInset(defaults: defaults),
+        x: MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+            presentation: presentation,
+            hasTrafficLights: trafficLightFrameInContent != nil,
+            defaults: defaults
+        ),
         y: targetY,
         width: MinimalModeSidebarTitlebarControlsLayout.hostWidth(
             presentation: presentation,
@@ -1009,7 +1039,11 @@ func isMinimalModeSidebarChromeHoverCandidate(
 
     let presentation = minimalModeSidebarTitlebarControlsPresentation(in: window, defaults: defaults)
     let config = titlebarControlsStyleConfig(defaults: defaults)
-    let minX = MinimalModeSidebarTitlebarControlsMetrics.leadingInset(defaults: defaults)
+    let minX = MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+        presentation: presentation,
+        hasTrafficLights: true,
+        defaults: defaults
+    )
     let maxX = minX + MinimalModeSidebarTitlebarControlsLayout.hostWidth(
         presentation: presentation,
         config: config
@@ -1057,8 +1091,12 @@ func minimalModeSidebarControlActionSlot(
         topStripHeight: MinimalModeChromeMetrics.titlebarHeight
     ) else { return nil }
 
-    let leadingInset = MinimalModeSidebarTitlebarControlsMetrics.leadingInset(defaults: defaults)
     let presentation = minimalModeSidebarTitlebarControlsPresentation(in: window, defaults: defaults)
+    let leadingInset = MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+        presentation: presentation,
+        hasTrafficLights: true,
+        defaults: defaults
+    )
     let localPoint = NSPoint(
         x: locationInWindow.x - leadingInset,
         y: MinimalModeSidebarTitlebarControlsMetrics.hostHeight / 2
@@ -1106,7 +1144,11 @@ func recordMinimalModeSidebarChromeHoverForUITest(
         titlebarBandHeight: MinimalModeChromeMetrics.titlebarHeight
     )
     let presentation = minimalModeSidebarTitlebarControlsPresentation(in: window, defaults: defaults)
-    let minX = MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+    let minX = MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+        presentation: presentation,
+        hasTrafficLights: true,
+        defaults: defaults
+    )
     let maxX = minX + MinimalModeSidebarTitlebarControlsLayout.hostWidth(
         presentation: presentation,
         config: titlebarControlsStyleConfig(defaults: defaults)
