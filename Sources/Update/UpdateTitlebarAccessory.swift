@@ -128,7 +128,7 @@ enum TitlebarControlsStyle: Int, CaseIterable, Identifiable {
     }
 }
 
-struct TitlebarControlsStyleConfig {
+struct TitlebarControlsStyleConfig: Equatable {
     let spacing: CGFloat
     let iconSize: CGFloat
     let buttonSize: CGFloat
@@ -1410,26 +1410,34 @@ private struct TitlebarSidebarGlyphShape: Shape {
 
 private struct TitlebarControlsGapDragView: NSViewRepresentable {
     let config: TitlebarControlsStyleConfig
+    let presentation: MinimalModeSidebarTitlebarControlsPresentation
 
     func makeNSView(context: Context) -> GapDragView {
         let view = GapDragView()
         view.config = config
+        view.presentation = presentation
         return view
     }
 
     func updateNSView(_ nsView: GapDragView, context: Context) {
         nsView.config = config
+        nsView.presentation = presentation
     }
 
     final class GapDragView: NSView {
         var config = TitlebarControlsStyle.classic.config
+        var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
 
         override var mouseDownCanMoveWindow: Bool { false }
 
         override func hitTest(_ point: NSPoint) -> NSView? {
             guard NSApp.currentEvent?.type == .leftMouseDown else { return nil }
             guard bounds.contains(point) else { return nil }
-            guard !TitlebarControlsHitRegions.pointFallsInButtonColumn(point, config: config) else {
+            guard !TitlebarControlsHitRegions.pointFallsInButtonColumn(
+                point,
+                config: config,
+                presentation: presentation
+            ) else {
                 return nil
             }
             return self
@@ -1458,20 +1466,24 @@ private struct TitlebarControlsGapDragView: NSViewRepresentable {
 
 private struct MinimalModeTitlebarButtonHitRegionView: NSViewRepresentable {
     let config: TitlebarControlsStyleConfig
+    let presentation: MinimalModeSidebarTitlebarControlsPresentation
 
     func makeNSView(context: Context) -> ButtonHitRegionView {
         let view = ButtonHitRegionView()
         view.config = config
+        view.presentation = presentation
         return view
     }
 
     func updateNSView(_ nsView: ButtonHitRegionView, context: Context) {
         nsView.config = config
+        nsView.presentation = presentation
         MinimalModeTitlebarControlHitRegionRegistry.register(nsView)
     }
 
     final class ButtonHitRegionView: NSView, MinimalModeSidebarControlActionHitRegionProviding {
         var config = TitlebarControlsStyle.classic.config
+        var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
 
         override func viewDidMoveToWindow() {
             super.viewDidMoveToWindow()
@@ -1489,7 +1501,11 @@ private struct MinimalModeTitlebarButtonHitRegionView: NSViewRepresentable {
         }
 
         func minimalModeSidebarControlActionSlot(localPoint: NSPoint) -> MinimalModeSidebarControlActionSlot? {
-            TitlebarControlsHitRegions.sidebarActionSlot(at: localPoint, config: config)
+            TitlebarControlsHitRegions.sidebarActionSlot(
+                at: localPoint,
+                config: config,
+                presentation: presentation
+            )
         }
 
         deinit {
@@ -1501,6 +1517,7 @@ private struct MinimalModeTitlebarButtonHitRegionView: NSViewRepresentable {
 struct HiddenTitlebarSidebarControlsView: View {
     let unreadModel: SidebarUnreadModel
     let layoutModel: TitlebarControlsLayoutModel
+    let presentation: MinimalModeSidebarTitlebarControlsPresentation
     let onToggleSidebar: () -> Void
     let onToggleNotifications: (NSView?) -> Void
     let onNewTab: () -> Void
@@ -1511,12 +1528,17 @@ struct HiddenTitlebarSidebarControlsView: View {
     @State private var isHoveringHost = false
     @State private var isHoveringWindowChrome = false
     @State private var hostWindowNumber: Int?
+    @State private var compactMenuAnchorView: NSView?
     private var shouldPinControls: Bool {
         isHoveringHost || isHoveringWindowChrome || popoverVisibilityState.isShown(in: hostWindowNumber)
     }
 
     var body: some View {
         let style = layoutModel.snapshot.style
+        let hostWidth = MinimalModeSidebarTitlebarControlsLayout.hostWidth(
+            presentation: presentation,
+            config: style.config
+        )
 
         ZStack(alignment: .leading) {
             WindowAccessor { window in
@@ -1543,26 +1565,32 @@ struct HiddenTitlebarSidebarControlsView: View {
                 #endif
             }
             .frame(
-                width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+                width: hostWidth,
                 height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight
             )
             .allowsHitTesting(false)
 
-            TitlebarControlsView(
-                unreadModel: unreadModel,
-                layoutModel: layoutModel,
-                viewModel: viewModel,
-                onToggleSidebar: onToggleSidebar,
-                onToggleNotifications: { [viewModel] in
-                    onToggleNotifications(viewModel.notificationsAnchorView)
-                },
-                onNewTab: onNewTab,
-                onFocusHistoryBack: onFocusHistoryBack,
-                onFocusHistoryForward: onFocusHistoryForward,
-                visibilityMode: .alwaysVisible
-            )
+            Group {
+                if presentation == .compact {
+                    compactMenuButton(config: style.config)
+                } else {
+                    TitlebarControlsView(
+                        unreadModel: unreadModel,
+                        layoutModel: layoutModel,
+                        viewModel: viewModel,
+                        onToggleSidebar: onToggleSidebar,
+                        onToggleNotifications: { [viewModel] in
+                            onToggleNotifications(viewModel.notificationsAnchorView)
+                        },
+                        onNewTab: onNewTab,
+                        onFocusHistoryBack: onFocusHistoryBack,
+                        onFocusHistoryForward: onFocusHistoryForward,
+                        visibilityMode: .alwaysVisible
+                    )
+                }
+            }
             .frame(
-                width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+                width: hostWidth,
                 height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight,
                 alignment: .leading
             )
@@ -1571,60 +1599,44 @@ struct HiddenTitlebarSidebarControlsView: View {
             .accessibilityHidden(true)
             .animation(.easeInOut(duration: 0.14), value: shouldPinControls)
 
-            TitlebarControlsGapDragView(config: style.config)
+            TitlebarControlsGapDragView(config: style.config, presentation: presentation)
                 .frame(
-                    width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+                    width: hostWidth,
                     height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight
                 )
 
             MinimalModeSidebarControlActionProxyView(
                 config: style.config,
-                requiresRevealedState: true
-            ) { slot, anchorView, _ in
-                switch slot {
-                case .toggleSidebar:
-                    onToggleSidebar()
-                case .showNotifications:
-                    onToggleNotifications(anchorView)
-                case .newTab:
-                    onNewTab()
-                case .cloudVM:
-                    _ = AppDelegate.shared?.showNewWorkspaceContextMenu(
-                        anchorView: anchorView,
-                        debugSource: "titlebar.minimalSidebar.cloudMenu"
-                    )
-                case .focusHistoryBack:
-                    let availability = focusHistoryNavigationAvailability(
-                        preferredWindow: hostWindowForFocusHistoryNavigation
-                    )
-                    guard availability.canNavigateBack else { return }
-                    onFocusHistoryBack()
-                case .focusHistoryForward:
-                    let availability = focusHistoryNavigationAvailability(
-                        preferredWindow: hostWindowForFocusHistoryNavigation
-                    )
-                    guard availability.canNavigateForward else { return }
-                    onFocusHistoryForward()
-                }
+                presentation: presentation,
+                requiresRevealedState: true,
+                compactMenuAccessibilityValue: compactMenuAccessibilityValue
+            ) { slot, anchorView, locationInWindow in
+                guard let window = anchorView.window else { return }
+                AppDelegate.shared?.performMinimalModeSidebarControlAction(
+                    slot,
+                    window: window,
+                    anchorView: anchorView,
+                    locationInWindow: locationInWindow
+                )
             }
             .frame(
-                width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+                width: hostWidth,
                 height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight
             )
 
             PassthroughHoverTrackingView(capturesPassiveHits: !shouldPinControls) { isHoveringHost = $0 }
             .frame(
-                width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+                width: hostWidth,
                 height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight
             )
 
         }
         .frame(
-            width: MinimalModeSidebarTitlebarControlsMetrics.hostWidth,
+            width: hostWidth,
             height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight,
             alignment: .leading
         )
-        .background(MinimalModeTitlebarButtonHitRegionView(config: style.config))
+        .background(MinimalModeTitlebarButtonHitRegionView(config: style.config, presentation: presentation))
         .onReceive(MinimalModeSidebarChromeHoverState.shared.$hoveredWindowNumber) { hoveredWindowNumber in
             isHoveringWindowChrome = hostWindowNumber == hoveredWindowNumber
             #if DEBUG
@@ -1645,13 +1657,226 @@ struct HiddenTitlebarSidebarControlsView: View {
         }
     }
 
-    @MainActor
-    private var hostWindowForFocusHistoryNavigation: NSWindow? {
-        if let hostWindowNumber,
-           let hostWindow = NSApp.windows.first(where: { $0.windowNumber == hostWindowNumber }) {
-            return hostWindow
+    private func compactMenuButton(config: TitlebarControlsStyleConfig) -> some View {
+        let badgeBaseFontSize = titlebarNotificationBadgeFontSize(for: config)
+        return TitlebarControlButton(
+            config: config,
+            foregroundColor: Color(nsColor: titlebarControlForegroundNSColor(opacity: 1.0)),
+            accessibilityIdentifier: "titlebarControl.compactMenu",
+            accessibilityLabel: String(
+                localized: "titlebar.moreControls.accessibilityLabel",
+                defaultValue: "More Controls"
+            ),
+            action: {
+                guard let compactMenuAnchorView else { return }
+                AppDelegate.shared?.showMinimalModeSidebarControlsMenu(anchorView: compactMenuAnchorView)
+            }
+        ) {
+            ZStack(alignment: .topTrailing) {
+                CmuxSystemSymbolImage(systemName: "ellipsis", pointSize: config.iconSize, weight: .semibold)
+                    .frame(width: config.buttonSize, height: config.buttonSize)
+
+                if unreadModel.totalUnreadCount > 0 {
+                    Text("\(min(unreadModel.totalUnreadCount, 99))")
+                        .cmuxFont(size: badgeBaseFontSize, weight: .semibold)
+                        .foregroundColor(.white)
+                        .frame(width: config.badgeSize, height: config.badgeSize)
+                        .background(Circle().fill(cmuxAccentColor()))
+                        .offset(x: config.badgeOffset.width, y: config.badgeOffset.height)
+                }
+            }
         }
-        return NSApp.keyWindow ?? NSApp.mainWindow
+        .background(TitlebarControlAnchorView { compactMenuAnchorView = $0 })
+        .padding(
+            .leading,
+            TitlebarControlsHitRegions.buttonXRange(for: .compactMenu, config: config)?.lowerBound ?? 0
+        )
+        .safeHelp(
+            String(
+                localized: "titlebar.moreControls.tooltip",
+                defaultValue: "Show titlebar controls"
+            )
+        )
+    }
+
+    private var compactMenuAccessibilityValue: String? {
+        let unreadCount = unreadModel.totalUnreadCount
+        guard unreadCount > 0 else { return nil }
+        if unreadCount == 1 {
+            return String(localized: "statusMenu.unreadCount.one", defaultValue: "1 unread notification")
+        }
+        return String(
+            localized: "statusMenu.unreadCount.other",
+            defaultValue: "\(unreadCount) unread notifications"
+        )
+    }
+}
+
+extension AppDelegate {
+    @MainActor
+    func showMinimalModeSidebarControlsMenu(anchorView: NSView) {
+        guard let window = anchorView.window else { return }
+        let menu = makeMinimalModeSidebarControlsMenu(anchorView: anchorView, window: window)
+        MinimalModeSidebarChromeHoverState.shared.setHovering(true, windowNumber: window.windowNumber)
+        menu.popUp(
+            positioning: nil,
+            at: NSPoint(x: 0, y: anchorView.bounds.maxY + 2),
+            in: anchorView
+        )
+        MinimalModeSidebarChromeHoverState.shared.setHovering(false, windowNumber: window.windowNumber)
+    }
+
+    @MainActor
+    func performMinimalModeSidebarControlAction(
+        _ slot: MinimalModeSidebarControlActionSlot,
+        window: NSWindow,
+        anchorView: NSView,
+        locationInWindow: NSPoint
+    ) {
+        guard let context = prepareSenderRelativeMainWindowAction(in: window) else { return }
+        switch slot {
+        case .toggleSidebar:
+            context.sidebarState.toggle()
+        case .showNotifications:
+            let resolvedAnchorView = NotificationsAnchorRegistry.shared.closestAnchor(
+                in: window,
+                to: locationInWindow
+            ) ?? anchorView
+            toggleNotificationsPopover(animated: true, anchorView: resolvedAnchorView)
+        case .newTab:
+            _ = performNewWorkspaceAction(
+                tabManager: context.tabManager,
+                debugSource: "titlebar.minimalSidebarControl"
+            )
+        case .cloudVM:
+            _ = showNewWorkspaceContextMenu(
+                anchorView: anchorView,
+                debugSource: "titlebar.minimalSidebar.cloudMenu"
+            )
+        case .focusHistoryBack:
+            guard context.tabManager.canNavigateBack else { return }
+            context.tabManager.navigateBack()
+        case .focusHistoryForward:
+            guard context.tabManager.canNavigateForward else { return }
+            context.tabManager.navigateForward()
+        case .compactMenu:
+            showMinimalModeSidebarControlsMenu(anchorView: anchorView)
+        }
+    }
+
+    @MainActor
+    private func makeMinimalModeSidebarControlsMenu(anchorView: NSView, window: NSWindow) -> NSMenu {
+        let menu = NSMenu()
+        menu.autoenablesItems = false
+        menu.addItem(minimalModeSidebarControlsMenuItem(for: .toggleSidebar, anchorView: anchorView))
+
+        let notificationsItem = minimalModeSidebarControlsMenuItem(
+            for: .showNotifications,
+            anchorView: anchorView
+        )
+        let unreadCount = TerminalNotificationStore.shared.unreadCount
+        if unreadCount > 0 {
+            notificationsItem.badge = NSMenuItemBadge(string: String(min(unreadCount, 99)))
+        }
+        menu.addItem(notificationsItem)
+
+        menu.addItem(.separator())
+        menu.addItem(minimalModeSidebarControlsMenuItem(for: .newTab, anchorView: anchorView))
+        menu.addItem(minimalModeSidebarControlsMenuItem(for: .cloudVM, anchorView: anchorView))
+
+        menu.addItem(.separator())
+        let availability = focusHistoryNavigationAvailability(preferredWindow: window)
+        let backItem = minimalModeSidebarControlsMenuItem(for: .focusHistoryBack, anchorView: anchorView)
+        backItem.isEnabled = availability.canNavigateBack
+        menu.addItem(backItem)
+        let forwardItem = minimalModeSidebarControlsMenuItem(for: .focusHistoryForward, anchorView: anchorView)
+        forwardItem.isEnabled = availability.canNavigateForward
+        menu.addItem(forwardItem)
+        return menu
+    }
+
+    @MainActor
+    private func minimalModeSidebarControlsMenuItem(
+        for slot: MinimalModeSidebarControlActionSlot,
+        anchorView: NSView
+    ) -> NSMenuItem {
+        let item = NSMenuItem(
+            title: slot.accessibilityLabel,
+            action: #selector(performMinimalModeSidebarControlsMenuItem(_:)),
+            keyEquivalent: ""
+        )
+        item.target = self
+        item.tag = slot.rawValue
+        item.representedObject = anchorView
+        item.image = NSImage(
+            systemSymbolName: minimalModeSidebarControlsMenuSymbol(for: slot),
+            accessibilityDescription: nil
+        )
+        if let shortcutAction = minimalModeSidebarControlsShortcutAction(for: slot) {
+            let shortcut = KeyboardShortcutSettings.shortcut(for: shortcutAction)
+            if let keyEquivalent = shortcut.menuItemKeyEquivalent {
+                item.keyEquivalent = keyEquivalent
+                item.keyEquivalentModifierMask = shortcut.modifierFlags
+            }
+        }
+        return item
+    }
+
+    @MainActor
+    @objc private func performMinimalModeSidebarControlsMenuItem(_ sender: NSMenuItem) {
+        guard let slot = MinimalModeSidebarControlActionSlot(rawValue: sender.tag),
+              let anchorView = sender.representedObject as? NSView,
+              let window = anchorView.window else {
+            return
+        }
+        let locationInWindow = anchorView.convert(
+            NSPoint(x: anchorView.bounds.midX, y: anchorView.bounds.midY),
+            to: nil
+        )
+        performMinimalModeSidebarControlAction(
+            slot,
+            window: window,
+            anchorView: anchorView,
+            locationInWindow: locationInWindow
+        )
+    }
+
+    private func minimalModeSidebarControlsMenuSymbol(for slot: MinimalModeSidebarControlActionSlot) -> String {
+        switch slot {
+        case .toggleSidebar:
+            return "sidebar.left"
+        case .showNotifications:
+            return "bell"
+        case .newTab:
+            return "plus"
+        case .cloudVM:
+            return "chevron.down"
+        case .focusHistoryBack:
+            return "arrow.left"
+        case .focusHistoryForward:
+            return "arrow.right"
+        case .compactMenu:
+            return "ellipsis"
+        }
+    }
+
+    private func minimalModeSidebarControlsShortcutAction(
+        for slot: MinimalModeSidebarControlActionSlot
+    ) -> KeyboardShortcutSettings.Action? {
+        switch slot {
+        case .toggleSidebar:
+            return .toggleSidebar
+        case .showNotifications:
+            return .showNotifications
+        case .newTab:
+            return .newTab
+        case .focusHistoryBack:
+            return .focusHistoryBack
+        case .focusHistoryForward:
+            return .focusHistoryForward
+        case .cloudVM, .compactMenu:
+            return nil
+        }
     }
 }
 

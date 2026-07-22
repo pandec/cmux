@@ -1,12 +1,69 @@
 import AppKit
-import Combine
 import CmuxTestSupport
 import SwiftUI
 
+enum MinimalModeSidebarTitlebarControlsPresentation: Equatable {
+    case expanded
+    case compact
+}
+
+enum MinimalModeSidebarTitlebarControlsLayout {
+    static func minimumExpandedSidebarWidth(
+        config: TitlebarControlsStyleConfig,
+        leadingInset: CGFloat
+    ) -> CGFloat {
+        leadingInset + hostWidth(presentation: .expanded, config: config)
+    }
+
+    static func presentation(
+        sidebarWidth: CGFloat?,
+        config: TitlebarControlsStyleConfig,
+        leadingInset: CGFloat
+    ) -> MinimalModeSidebarTitlebarControlsPresentation {
+        guard let sidebarWidth else { return .expanded }
+        return sidebarWidth >= minimumExpandedSidebarWidth(config: config, leadingInset: leadingInset)
+            ? .expanded
+            : .compact
+    }
+
+    static func hostWidth(
+        presentation: MinimalModeSidebarTitlebarControlsPresentation,
+        config: TitlebarControlsStyleConfig
+    ) -> CGFloat {
+        switch presentation {
+        case .expanded:
+            return ceil(TitlebarControlsLayoutMetrics.buttonRowWidth(config: config) + 14)
+        case .compact:
+            return MinimalModeSidebarTitlebarControlsMetrics.singleButtonHostWidth
+        }
+    }
+
+    static func slots(
+        for presentation: MinimalModeSidebarTitlebarControlsPresentation
+    ) -> [MinimalModeSidebarControlActionSlot] {
+        switch presentation {
+        case .expanded:
+            return [
+                .toggleSidebar,
+                .showNotifications,
+                .newTab,
+                .cloudVM,
+                .focusHistoryBack,
+                .focusHistoryForward,
+            ]
+        case .compact:
+            return [.compactMenu]
+        }
+    }
+}
+
 struct MinimalModeSidebarControlActionProxyView: NSViewRepresentable {
     let config: TitlebarControlsStyleConfig
+    var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
     var isEnabled = true
     var requiresRevealedState = false
+    var exposesAccessibility = true
+    var compactMenuAccessibilityValue: String?
     let onAction: (MinimalModeSidebarControlActionSlot, NSView, NSPoint) -> Void
 
     func makeNSView(context: Context) -> MinimalModeSidebarControlActionView {
@@ -21,18 +78,28 @@ struct MinimalModeSidebarControlActionProxyView: NSViewRepresentable {
 
     private func configure(_ view: MinimalModeSidebarControlActionView) {
         view.config = config
+        view.presentation = presentation
         view.isEnabled = isEnabled
         view.requiresRevealedState = requiresRevealedState
+        view.exposesAccessibility = exposesAccessibility
+        view.compactMenuAccessibilityValue = compactMenuAccessibilityValue
         view.onAction = onAction
     }
 }
 
 enum TitlebarControlsHitRegions {
     static let outerLeadingPadding: CGFloat = HeaderChromeControlMetrics.titlebarControlsLeadingPadding
-    static let buttonCount = MinimalModeSidebarControlActionSlot.allCases.count
+    static let buttonCount = MinimalModeSidebarTitlebarControlsLayout.slots(for: .expanded).count
 
     static func buttonXRanges(config: TitlebarControlsStyleConfig) -> [ClosedRange<CGFloat>] {
-        MinimalModeSidebarControlActionSlot.allCases.compactMap {
+        buttonXRanges(config: config, presentation: .expanded)
+    }
+
+    static func buttonXRanges(
+        config: TitlebarControlsStyleConfig,
+        presentation: MinimalModeSidebarTitlebarControlsPresentation
+    ) -> [ClosedRange<CGFloat>] {
+        MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation).compactMap {
             buttonXRange(for: $0, config: config)
         }
     }
@@ -64,13 +131,15 @@ enum TitlebarControlsHitRegions {
             focusBackX
         case .focusHistoryForward:
             focusForwardX
+        case .compactMenu:
+            startX
         }
         let width: CGFloat = switch slot {
         case .newTab:
             newTabWidth
         case .cloudVM:
             cloudMenuWidth
-        case .toggleSidebar, .showNotifications, .focusHistoryBack, .focusHistoryForward:
+        case .toggleSidebar, .showNotifications, .focusHistoryBack, .focusHistoryForward, .compactMenu:
             config.buttonSize
         }
         return minX...(minX + width)
@@ -80,8 +149,18 @@ enum TitlebarControlsHitRegions {
         at point: NSPoint,
         config: TitlebarControlsStyleConfig
     ) -> MinimalModeSidebarControlActionSlot? {
-        for (index, range) in buttonXRanges(config: config).enumerated() where range.contains(point.x) {
-            return MinimalModeSidebarControlActionSlot(rawValue: index)
+        sidebarActionSlot(at: point, config: config, presentation: .expanded)
+    }
+
+    static func sidebarActionSlot(
+        at point: NSPoint,
+        config: TitlebarControlsStyleConfig,
+        presentation: MinimalModeSidebarTitlebarControlsPresentation
+    ) -> MinimalModeSidebarControlActionSlot? {
+        let slots = MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation)
+        let ranges = buttonXRanges(config: config, presentation: presentation)
+        for (slot, range) in zip(slots, ranges) where range.contains(point.x) {
+            return slot
         }
         return nil
     }
@@ -89,24 +168,56 @@ enum TitlebarControlsHitRegions {
     static func pointFallsInButtonColumn(_ point: NSPoint, config: TitlebarControlsStyleConfig) -> Bool {
         sidebarActionSlot(at: point, config: config) != nil
     }
+
+    static func pointFallsInButtonColumn(
+        _ point: NSPoint,
+        config: TitlebarControlsStyleConfig,
+        presentation: MinimalModeSidebarTitlebarControlsPresentation
+    ) -> Bool {
+        sidebarActionSlot(at: point, config: config, presentation: presentation) != nil
+    }
 }
 
 final class MinimalModeSidebarControlActionView: NSView {
     var config = TitlebarControlsStyle.classic.config
     {
-        didSet { needsLayout = true }
+        didSet {
+            guard config != oldValue else { return }
+            needsLayout = true
+        }
+    }
+    var presentation = MinimalModeSidebarTitlebarControlsPresentation.expanded
+    {
+        didSet {
+            guard presentation != oldValue else { return }
+            needsLayout = true
+            syncButtons()
+        }
     }
     var isEnabled = true
     {
-        didSet { syncButtons() }
+        didSet {
+            guard isEnabled != oldValue else { return }
+            syncButtons()
+        }
     }
     var requiresRevealedState = false
+    var exposesAccessibility = true
     {
-        didSet { syncButtons() }
+        didSet {
+            guard exposesAccessibility != oldValue else { return }
+            syncButtons()
+        }
+    }
+    var compactMenuAccessibilityValue: String?
+    {
+        didSet {
+            guard compactMenuAccessibilityValue != oldValue else { return }
+            syncButtons()
+        }
     }
     var telemetryPrefix = "minimalSidebarClickProxy"
     var onAction: ((MinimalModeSidebarControlActionSlot, NSView, NSPoint) -> Void)?
-    private var cancellables: Set<AnyCancellable> = []
     private let buttons: [MinimalModeSidebarControlActionSlot: MinimalModeSidebarControlButton]
 
     override init(frame frameRect: NSRect) {
@@ -123,7 +234,6 @@ final class MinimalModeSidebarControlActionView: NSView {
             button.setAccessibilityParent(self)
             addSubview(button)
         }
-        observeRevealState()
         syncButtons()
     }
 
@@ -142,7 +252,6 @@ final class MinimalModeSidebarControlActionView: NSView {
             button.setAccessibilityParent(self)
             addSubview(button)
         }
-        observeRevealState()
         syncButtons()
     }
 
@@ -159,7 +268,7 @@ final class MinimalModeSidebarControlActionView: NSView {
         button.identifier = NSUserInterfaceItemIdentifier(slot.accessibilityIdentifier)
         button.setAccessibilityIdentifier(slot.accessibilityIdentifier)
         button.setAccessibilityLabel(slot.accessibilityLabel)
-        button.setAccessibilityRole(.button)
+        button.setAccessibilityRole(slot == .compactMenu ? .menuButton : .button)
         return button
     }
 
@@ -170,8 +279,8 @@ final class MinimalModeSidebarControlActionView: NSView {
     }
 
     override func accessibilityChildren() -> [Any]? {
-        guard isRevealed || !requiresRevealedState else { return [] }
-        return MinimalModeSidebarControlActionSlot.allCases.compactMap { buttons[$0] }
+        guard exposesAccessibility, isEnabled else { return [] }
+        return MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation).compactMap { buttons[$0] }
     }
 
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
@@ -185,7 +294,11 @@ final class MinimalModeSidebarControlActionView: NSView {
             return nil
         }
         guard bounds.contains(point) else { return nil }
-        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(at: point, config: config) else {
+        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(
+            at: point,
+            config: config,
+            presentation: presentation
+        ) else {
             return nil
         }
         if NSApp.currentEvent?.type == .rightMouseDown, !slot.acceptsContextMenu {
@@ -207,7 +320,11 @@ final class MinimalModeSidebarControlActionView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let localPoint = convert(event.locationInWindow, from: nil)
-        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(at: localPoint, config: config) else {
+        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(
+            at: localPoint,
+            config: config,
+            presentation: presentation
+        ) else {
             super.mouseDown(with: event)
             return
         }
@@ -220,7 +337,11 @@ final class MinimalModeSidebarControlActionView: NSView {
 
     override func rightMouseDown(with event: NSEvent) {
         let localPoint = convert(event.locationInWindow, from: nil)
-        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(at: localPoint, config: config),
+        guard let slot = TitlebarControlsHitRegions.sidebarActionSlot(
+            at: localPoint,
+            config: config,
+            presentation: presentation
+        ),
               shouldAcceptAction(at: localPoint) else {
             super.rightMouseDown(with: event)
             return
@@ -242,15 +363,21 @@ final class MinimalModeSidebarControlActionView: NSView {
             _ = AppDelegate.shared?.showFocusHistoryContextMenu(anchorView: self, event: event, direction: .forward)
         case .showNotifications:
             super.rightMouseDown(with: event)
+        case .compactMenu:
+            performAction(slot: slot, anchorView: self, locationInWindow: event.locationInWindow)
         }
     }
 
     override func layout() {
         super.layout()
-        let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
-        for (index, range) in ranges.enumerated() {
-            guard let slot = MinimalModeSidebarControlActionSlot(rawValue: index),
-                  let button = buttons[slot] else { continue }
+        let slots = MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation)
+        let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config, presentation: presentation)
+        for button in buttons.values {
+            button.isHidden = true
+        }
+        for (slot, range) in zip(slots, ranges) {
+            guard let button = buttons[slot] else { continue }
+            button.isHidden = false
             button.frame = NSRect(
                 x: range.lowerBound,
                 y: max(0, (bounds.height - config.buttonSize) / 2),
@@ -295,23 +422,14 @@ final class MinimalModeSidebarControlActionView: NSView {
         onAction?(slot, anchorView, locationInWindow)
     }
 
-    private func observeRevealState() {
-        MinimalModeSidebarChromeHoverState.shared.$hoveredWindowNumber
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.syncButtons() }
-            .store(in: &cancellables)
-
-        NotificationsPopoverVisibilityState.shared.$shownWindowNumbers
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.syncButtons() }
-            .store(in: &cancellables)
-    }
-
     private func syncButtons() {
-        let revealed = isRevealed
-        for button in buttons.values {
-            button.isEnabled = isEnabled && (revealed || !requiresRevealedState)
-            button.setAccessibilityElement(revealed || !requiresRevealedState)
+        let visibleSlots = Set(MinimalModeSidebarTitlebarControlsLayout.slots(for: presentation))
+        for (slot, button) in buttons {
+            let isVisible = visibleSlots.contains(slot)
+            button.isHidden = !isVisible
+            button.isEnabled = isVisible && isEnabled
+            button.setAccessibilityElement(isVisible && isEnabled && exposesAccessibility)
+            button.setAccessibilityValue(slot == .compactMenu ? compactMenuAccessibilityValue : nil)
         }
     }
 
@@ -352,7 +470,7 @@ private final class MinimalModeSidebarControlButton: NSButton {
     }
 
     override func accessibilityRole() -> NSAccessibility.Role? {
-        .button
+        slot == .compactMenu ? .menuButton : .button
     }
 
     override func mouseDown(with event: NSEvent) {

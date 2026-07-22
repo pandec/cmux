@@ -502,6 +502,117 @@ struct TitlebarControlsSizingPolicyTests {
 @Suite
 struct TitlebarControlsHoverPolicyTests {
     @Test
+    func testCompactMenuLeadingInsetFollowsTrafficLightPresence() {
+        let configuredInset = CGFloat(MinimalModeTitlebarDebugSettings.defaultLeftControlsLeadingInset)
+
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .compact,
+                hasTrafficLights: true
+            ),
+            configuredInset + 4,
+            accuracy: 0.001
+        )
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .compact,
+                hasTrafficLights: false
+            ),
+            4,
+            accuracy: 0.001
+        )
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .expanded,
+                hasTrafficLights: false
+            ),
+            configuredInset,
+            accuracy: 0.001
+        )
+    }
+
+    @Test
+    func testNarrowSidebarUsesOnlyCompactMenuHitLane() throws {
+        for style in TitlebarControlsStyle.allCases {
+            let config = style.config
+            let minimumExpandedWidth = MinimalModeSidebarTitlebarControlsLayout.minimumExpandedSidebarWidth(
+                config: config,
+                leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+            )
+
+            checkEqual(
+                MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: minimumExpandedWidth,
+                    config: config,
+                    leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                ),
+                .expanded
+            )
+            checkEqual(
+                MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: minimumExpandedWidth - 1,
+                    config: config,
+                    leadingInset: MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                ),
+                .compact
+            )
+
+            let compactRanges = TitlebarControlsHitRegions.buttonXRanges(
+                config: config,
+                presentation: .compact
+            )
+            checkEqual(compactRanges.count, 1)
+            let compactLane = try #require(compactRanges.first)
+            checkLessThanOrEqual(
+                compactLane.lowerBound + config.buttonSize,
+                MinimalModeSidebarTitlebarControlsLayout.hostWidth(
+                    presentation: .compact,
+                    config: config
+                ),
+                "Expected the visible compact menu button to fit its hit lane inside the host"
+            )
+            checkEqual(
+                TitlebarControlsHitRegions.sidebarActionSlot(
+                    at: NSPoint(x: compactLane.lowerBound + 1, y: 14),
+                    config: config,
+                    presentation: .compact
+                ),
+                .compactMenu
+            )
+
+            let expandedNewTabLane = try #require(
+                TitlebarControlsHitRegions.buttonXRange(for: .newTab, config: config)
+            )
+            checkEqual(
+                TitlebarControlsHitRegions.sidebarActionSlot(
+                    at: NSPoint(x: expandedNewTabLane.lowerBound + 1, y: 14),
+                    config: config,
+                    presentation: .compact
+                ),
+                nil
+            )
+        }
+    }
+
+    @Test
+    func testCompactMenuFitsForkMinimumSidebarWidth() {
+        for style in TitlebarControlsStyle.allCases {
+            let compactTrailingEdge = MinimalModeSidebarTitlebarControlsMetrics.leadingInset
+                + MinimalModeSidebarTitlebarControlsLayout.hostWidth(
+                    presentation: .compact,
+                    config: style.config
+                )
+            checkLessThanOrEqual(
+                compactTrailingEdge,
+                CGFloat(SessionPersistencePolicy.minimumSidebarWidth)
+            )
+        }
+    }
+
+    @Test
     func testHoverTrackingEnabledForEveryTitlebarStyle() {
         for style in TitlebarControlsStyle.allCases {
             checkTrue(
@@ -522,16 +633,16 @@ struct TitlebarControlsHoverPolicyTests {
         for style in TitlebarControlsStyle.allCases {
             let config = style.config
             let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
+            let slots = MinimalModeSidebarTitlebarControlsLayout.slots(for: .expanded)
 
-            checkEqual(ranges.count, MinimalModeSidebarControlActionSlot.allCases.count)
-            for (index, range) in ranges.enumerated() {
-                let slot = MinimalModeSidebarControlActionSlot(rawValue: index)
+            checkEqual(ranges.count, slots.count)
+            for (slot, range) in zip(slots, ranges) {
                 let expectedWidth: CGFloat = switch slot {
-                case .some(.newTab):
+                case .newTab:
                     TitlebarNewWorkspaceCloudSplitButtonMetrics.primaryWidth(config: config)
-                case .some(.cloudVM):
+                case .cloudVM:
                     TitlebarNewWorkspaceCloudSplitButtonMetrics.dropdownWidth(config: config)
-                case .some(.toggleSidebar), .some(.showNotifications), .some(.focusHistoryBack), .some(.focusHistoryForward), nil:
+                case .toggleSidebar, .showNotifications, .focusHistoryBack, .focusHistoryForward, .compactMenu:
                     config.buttonSize
                 }
                 checkEqual(
