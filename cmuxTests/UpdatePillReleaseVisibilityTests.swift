@@ -538,7 +538,7 @@ struct TitlebarControlsSizingPolicyTests {
 struct TitlebarControlsHoverPolicyTests {
     @Test
     func testCompactMenuLeadingInsetFollowsTrafficLightPresence() {
-        let configuredInset = MinimalModeTitlebarDebugSettings.defaultLeftControlsLeadingInset
+        let configuredInset = CGFloat(MinimalModeTitlebarDebugSettings.defaultLeftControlsLeadingInset)
 
         checkEqual(
             MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
