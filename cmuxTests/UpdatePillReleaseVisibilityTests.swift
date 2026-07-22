@@ -502,6 +502,39 @@ struct TitlebarControlsSizingPolicyTests {
 @Suite
 struct TitlebarControlsHoverPolicyTests {
     @Test
+    func testCompactMenuLeadingInsetFollowsTrafficLightPresence() {
+        let configuredInset = MinimalModeTitlebarDebugSettings.defaultLeftControlsLeadingInset
+
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .compact,
+                hasTrafficLights: true
+            ),
+            configuredInset + 4,
+            accuracy: 0.001
+        )
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .compact,
+                hasTrafficLights: false
+            ),
+            4,
+            accuracy: 0.001
+        )
+        checkEqual(
+            MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                configuredLeadingInset: configuredInset,
+                presentation: .expanded,
+                hasTrafficLights: false
+            ),
+            configuredInset,
+            accuracy: 0.001
+        )
+    }
+
+    @Test
     func testNarrowSidebarUsesOnlyCompactMenuHitLane() throws {
         for style in TitlebarControlsStyle.allCases {
             let config = style.config
