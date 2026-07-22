@@ -1843,6 +1843,7 @@ struct ContentView: View {
             },
             observedWindowReference: observedWindowReference,
             chromeBackgroundColor: windowAppearanceSnapshot.resolvedChromeBackgroundColor,
+            isFullScreen: isFullScreen,
             selection: $sidebarSelectionState.selection,
             selectedTabIds: $selectedTabIds, lastSidebarSelectionIndex: $lastSidebarSelectionIndex, sidebarRenderWorkerClient: $sidebarRenderWorkerClient
         )
@@ -11479,6 +11480,7 @@ struct VerticalTabsSidebar: View, Equatable {
     static func == (lhs: VerticalTabsSidebar, rhs: VerticalTabsSidebar) -> Bool {
         lhs.windowId == rhs.windowId
             && lhs.observedWindowReference.window === rhs.observedWindowReference.window
+            && lhs.isFullScreen == rhs.isFullScreen
             && lhs.updateViewModel === rhs.updateViewModel
             && lhs.fileExplorerState === rhs.fileExplorerState
             && lhs.featureFlags === rhs.featureFlags
@@ -11500,6 +11502,7 @@ struct VerticalTabsSidebar: View, Equatable {
     let onNewTab: () -> Void
     let observedWindowReference: WeakWindowReference
     let chromeBackgroundColor: NSColor
+    let isFullScreen: Bool
     var observedWindow: NSWindow? { observedWindowReference.window }
     @EnvironmentObject var tabManager: TabManager
     // Plain reference by design. Native row and titlebar subscribers own the
@@ -11843,6 +11846,7 @@ struct VerticalTabsSidebar: View, Equatable {
             layoutModel: titlebarControlsLayoutModel,
             leadingInset: CGFloat(titlebarDebugChromeSnapshot.leftControlsLeadingInset),
             topPadding: minimalModeSidebarTitlebarControlsTopPadding,
+            isFullScreen: isFullScreen,
             onToggleSidebar: onToggleSidebar,
             onToggleNotifications: { anchorView in
                 AppDelegate.shared?.toggleNotificationsPopover(
