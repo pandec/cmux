@@ -34,6 +34,7 @@ extension CmuxSettingsFileStore {
         "app.hideTabCloseButton",
         "app.renameSelectsExistingName",
         "app.commandPaletteSearchesAllSurfaces",
+        "app.surfaceCycleOrder",
         "workspaceGroups.newWorkspacePlacement",
         "terminal.adaptiveDefaultTheme",
         "terminal.showScrollBar",
