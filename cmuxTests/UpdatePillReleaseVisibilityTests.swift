@@ -537,7 +537,7 @@ struct TitlebarControlsSizingPolicyTests {
 @Suite
 struct TitlebarControlsHoverPolicyTests {
     @Test
-    func testNarrowSidebarUsesOnlyCompactMenuHitLane() {
+    func testNarrowSidebarUsesOnlyCompactMenuHitLane() throws {
         for style in TitlebarControlsStyle.allCases {
             let config = style.config
             let minimumExpandedWidth = MinimalModeSidebarTitlebarControlsLayout.minimumExpandedSidebarWidth(
@@ -567,7 +567,7 @@ struct TitlebarControlsHoverPolicyTests {
                 presentation: .compact
             )
             checkEqual(compactRanges.count, 1)
-            let compactLane = try! #require(compactRanges.first)
+            let compactLane = try #require(compactRanges.first)
             checkEqual(
                 TitlebarControlsHitRegions.sidebarActionSlot(
                     at: NSPoint(x: compactLane.lowerBound + 1, y: 14),
@@ -577,7 +577,7 @@ struct TitlebarControlsHoverPolicyTests {
                 .compactMenu
             )
 
-            let expandedNewTabLane = try! #require(
+            let expandedNewTabLane = try #require(
                 TitlebarControlsHitRegions.buttonXRange(for: .newTab, config: config)
             )
             checkEqual(
@@ -627,16 +627,17 @@ struct TitlebarControlsHoverPolicyTests {
         for style in TitlebarControlsStyle.allCases {
             let config = style.config
             let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
+            let slots = MinimalModeSidebarTitlebarControlsLayout.slots(for: .expanded)
 
-            checkEqual(ranges.count, MinimalModeSidebarControlActionSlot.allCases.count)
+            checkEqual(ranges.count, slots.count)
             for (index, range) in ranges.enumerated() {
-                let slot = MinimalModeSidebarControlActionSlot(rawValue: index)
+                let slot: MinimalModeSidebarControlActionSlot? = slots[index]
                 let expectedWidth: CGFloat = switch slot {
                 case .some(.newTab):
                     TitlebarNewWorkspaceSplitButtonMetrics.primaryWidth(config: config)
                 case .some(.newWorkspaceMenu):
                     TitlebarNewWorkspaceSplitButtonMetrics.dropdownWidth(config: config)
-                case .some(.toggleSidebar), .some(.showNotifications), .some(.focusHistoryBack), .some(.focusHistoryForward), nil:
+                case .some(.toggleSidebar), .some(.showNotifications), .some(.focusHistoryBack), .some(.focusHistoryForward), .some(.compactMenu), nil:
                     config.buttonSize
                 }
                 checkEqual(
