@@ -7,6 +7,7 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
     let layoutModel: TitlebarControlsLayoutModel
     let leadingInset: CGFloat
     let topPadding: CGFloat
+    let isFullScreen: Bool
     let onToggleSidebar: () -> Void
     let onToggleNotifications: (NSView?) -> Void
     let onNewTab: () -> Void
@@ -31,6 +32,11 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
                     config: config,
                     leadingInset: leadingInset
                 )
+                let resolvedLeadingInset = MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                    configuredLeadingInset: leadingInset,
+                    presentation: presentation,
+                    hasTrafficLights: !isFullScreen
+                )
                 HiddenTitlebarSidebarControlsView(
                     unreadModel: unreadModel,
                     layoutModel: layoutModel,
@@ -41,7 +47,7 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
                     onFocusHistoryBack: onFocusHistoryBack,
                     onFocusHistoryForward: onFocusHistoryForward
                 )
-                .padding(.leading, leadingInset)
+                .padding(.leading, resolvedLeadingInset)
                 .padding(.top, topPadding)
             }
         }
