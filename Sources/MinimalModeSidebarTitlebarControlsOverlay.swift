@@ -5,6 +5,7 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
     let notificationStore: TerminalNotificationStore
     let leadingInset: CGFloat
     let topPadding: CGFloat
+    let isFullScreen: Bool
     let onToggleSidebar: () -> Void
     let onToggleNotifications: (NSView?) -> Void
     let onNewTab: () -> Void
@@ -13,6 +14,8 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
 
     @AppStorage(WorkspacePresentationModeSettings.modeKey)
     private var workspacePresentationMode = WorkspacePresentationModeSettings.defaultMode.rawValue
+    @AppStorage(TitlebarControlsStyle.storageKey)
+    private var titlebarControlsStyleRawValue = TitlebarControlsStyle.defaultRawValue
 
     private var isMinimalMode: Bool {
         WorkspacePresentationModeSettings.mode(for: workspacePresentationMode) == .minimal
@@ -20,16 +23,30 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
 
     var body: some View {
         if isMinimalMode {
-            HiddenTitlebarSidebarControlsView(
-                notificationStore: notificationStore,
-                onToggleSidebar: onToggleSidebar,
-                onToggleNotifications: onToggleNotifications,
-                onNewTab: onNewTab,
-                onFocusHistoryBack: onFocusHistoryBack,
-                onFocusHistoryForward: onFocusHistoryForward
-            )
-            .padding(.leading, leadingInset)
-            .padding(.top, topPadding)
+            GeometryReader { geometry in
+                let config = TitlebarControlsStyle.stored(rawValue: titlebarControlsStyleRawValue).config
+                let presentation = MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: geometry.size.width,
+                    config: config,
+                    leadingInset: leadingInset
+                )
+                let resolvedLeadingInset = MinimalModeSidebarTitlebarControlsMetrics.resolvedLeadingInset(
+                    configuredLeadingInset: leadingInset,
+                    presentation: presentation,
+                    hasTrafficLights: !isFullScreen
+                )
+                HiddenTitlebarSidebarControlsView(
+                    notificationStore: notificationStore,
+                    presentation: presentation,
+                    onToggleSidebar: onToggleSidebar,
+                    onToggleNotifications: onToggleNotifications,
+                    onNewTab: onNewTab,
+                    onFocusHistoryBack: onFocusHistoryBack,
+                    onFocusHistoryForward: onFocusHistoryForward
+                )
+                .padding(.leading, resolvedLeadingInset)
+                .padding(.top, topPadding)
+            }
         }
     }
 }

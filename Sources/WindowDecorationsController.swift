@@ -335,35 +335,18 @@ final class WindowDecorationsController {
         #endif
 
         Task { @MainActor [weak window] in
-            guard let window else { return }
-            switch slot {
-            case .toggleSidebar:
-                _ = AppDelegate.shared?.toggleSidebarInActiveMainWindow(preferredWindow: window)
-            case .showNotifications:
-                let resolvedAnchorView = NotificationsAnchorRegistry.shared.closestAnchor(
-                    in: window,
-                    to: locationInWindow
-                ) ?? anchorView
-                AppDelegate.shared?.toggleNotificationsPopover(animated: true, anchorView: resolvedAnchorView)
-            case .newTab:
-                let targetTabManager = AppDelegate.shared?.activeTabManagerForCommands(preferredWindow: window)
-                _ = AppDelegate.shared?.performNewWorkspaceAction(
-                    tabManager: targetTabManager,
-                    debugSource: "titlebar.minimalSidebarControl"
-                )
-            case .cloudVM:
-                guard let anchorView else { return }
-                _ = AppDelegate.shared?.showNewWorkspaceContextMenu(
-                    anchorView: anchorView,
-                    debugSource: "titlebar.minimalSidebar.cloudMenu"
-                )
-            case .focusHistoryBack:
-                guard focusHistoryNavigationAvailability(preferredWindow: window).canNavigateBack else { return }
-                AppDelegate.shared?.activeTabManagerForCommands(preferredWindow: window)?.navigateBack()
-            case .focusHistoryForward:
-                guard focusHistoryNavigationAvailability(preferredWindow: window).canNavigateForward else { return }
-                AppDelegate.shared?.activeTabManagerForCommands(preferredWindow: window)?.navigateForward()
+            guard let window,
+                  let resolvedAnchorView = anchorView
+                    ?? self.minimalModeSidebarTitlebarClickTargets.object(forKey: window)
+                    ?? window.contentView else {
+                return
             }
+            AppDelegate.shared?.performMinimalModeSidebarControlAction(
+                slot,
+                window: window,
+                anchorView: resolvedAnchorView,
+                locationInWindow: locationInWindow
+            )
         }
     }
 
@@ -405,8 +388,10 @@ final class WindowDecorationsController {
             return view
         }()
         target.config = TitlebarControlsStyle.stored().config
+        target.presentation = minimalModeSidebarTitlebarControlsPresentation(in: window)
         target.isEnabled = true
         target.requiresRevealedState = true
+        target.exposesAccessibility = false
         target.telemetryPrefix = "minimalSidebarTitlebarClickTarget"
         target.onAction = { [weak self, weak window, weak target] slot, _, locationInWindow in
             let anchorView = target
@@ -437,7 +422,8 @@ final class WindowDecorationsController {
                 ? 0
                 : MinimalModeSidebarTitlebarControlsMetrics.titlebarControlsOpticalYOffset(
                     backingScaleFactor: window.backingScaleFactor
-                )
+                ),
+            presentation: target.presentation
         )
 
         #if DEBUG

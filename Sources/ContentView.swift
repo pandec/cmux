@@ -845,7 +845,17 @@ struct ContentView: View {
     )
     private var sidebarWidth: CGFloat {
         get { sidebarLayout.width }
-        nonmutating set { sidebarLayout.width = newValue }
+        nonmutating set {
+            let previousPresentation = observedWindow.map {
+                minimalModeSidebarTitlebarControlsPresentation(in: $0)
+            }
+            sidebarLayout.width = newValue
+            setMinimalModeSidebarTitlebarControlsSidebarWidth(newValue, in: observedWindow)
+            if let observedWindow,
+               previousPresentation != minimalModeSidebarTitlebarControlsPresentation(in: observedWindow) {
+                AppDelegate.shared?.applyWindowDecorations(to: observedWindow)
+            }
+        }
     }
     @State private var hoveredResizerHandles: Set<SidebarResizerHandle> = []
     @State private var isResizerDragging = false
@@ -1695,6 +1705,7 @@ struct ContentView: View {
                 )
             },
             observedWindowReference: observedWindowReference,
+            isFullScreen: isFullScreen,
             selection: $sidebarSelectionState.selection,
             selectedTabIds: $selectedTabIds, lastSidebarSelectionIndex: $lastSidebarSelectionIndex, sidebarRenderWorkerClient: $sidebarRenderWorkerClient
         )
@@ -3157,6 +3168,9 @@ struct ContentView: View {
         view = AnyView(view.onChange(of: titlebarControlsStyleRawValue) { _ in
             clampSidebarWidthIfNeeded()
             updateSidebarResizerBandState()
+            if let observedWindow {
+                AppDelegate.shared?.applyWindowDecorations(to: observedWindow)
+            }
         })
 
         view = AnyView(view.onChange(of: sidebarState.isVisible) { _, isVisible in
@@ -3252,6 +3266,7 @@ struct ContentView: View {
         window.identifier = NSUserInterfaceItemIdentifier(windowIdentifier)
         window.isRestorable = false
         setMinimalModeSidebarTitlebarControlsAvailable(sidebarState.isVisible, in: window)
+        setMinimalModeSidebarTitlebarControlsSidebarWidth(sidebarWidth, in: window)
         window.titlebarAppearsTransparent = true
         // Native AppKit titlebar dragging steals pane-tab drags in minimal
         // mode. Keep the main window immovable by default; explicit chrome
@@ -10412,6 +10427,7 @@ struct VerticalTabsSidebar: View, Equatable {
     static func == (lhs: VerticalTabsSidebar, rhs: VerticalTabsSidebar) -> Bool {
         lhs.windowId == rhs.windowId
             && lhs.observedWindowReference.window === rhs.observedWindowReference.window
+            && lhs.isFullScreen == rhs.isFullScreen
             && lhs.updateViewModel === rhs.updateViewModel
             && lhs.fileExplorerState === rhs.fileExplorerState
     }
@@ -10423,6 +10439,7 @@ struct VerticalTabsSidebar: View, Equatable {
     let onToggleSidebar: () -> Void
     let onNewTab: () -> Void
     let observedWindowReference: WeakWindowReference
+    let isFullScreen: Bool
     var observedWindow: NSWindow? { observedWindowReference.window }
     @EnvironmentObject var tabManager: TabManager
     // Observe the coalesced unread projection instead of the notification store
@@ -10726,6 +10743,7 @@ struct VerticalTabsSidebar: View, Equatable {
             notificationStore: notificationStore,
             leadingInset: CGFloat(titlebarDebugChromeSnapshot.leftControlsLeadingInset),
             topPadding: minimalModeSidebarTitlebarControlsTopPadding,
+            isFullScreen: isFullScreen,
             onToggleSidebar: onToggleSidebar,
             onToggleNotifications: { anchorView in
                 AppDelegate.shared?.toggleNotificationsPopover(
