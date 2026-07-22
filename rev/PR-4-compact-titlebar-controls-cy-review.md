@@ -28,3 +28,5 @@ Reviewed the complete diff against `origin/dev/bdec` with four independent lense
 ## Pass 2
 
 The focused second pass found one low-severity cleanup: after accessibility stopped depending on pointer reveal state, the old Combine subscriptions only repeated unchanged button synchronization on every hover/popover transition. Removed those subscriptions, their storage/import, and the now-redundant `requiresRevealedState` observer. Accessibility, correctness, and adversarial reviewers found no other verified repair regressions.
+
+> cy-review complete — 2026-07-22T11:19:11Z — rounds: 2
