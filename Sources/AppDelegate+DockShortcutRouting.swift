@@ -98,20 +98,6 @@ extension AppDelegate {
         return true
     }
 
-    func matchesLegacyNextSurfaceShortcut(event: NSEvent) -> Bool {
-        matchTabShortcut(
-            event: event,
-            shortcut: StoredShortcut(key: "\t", command: false, shift: false, option: false, control: true)
-        )
-    }
-
-    func matchesLegacyPreviousSurfaceShortcut(event: NSEvent) -> Bool {
-        matchTabShortcut(
-            event: event,
-            shortcut: StoredShortcut(key: "\t", command: false, shift: true, option: false, control: true)
-        )
-    }
-
     func ghosttyGotoSplitShortcut(for direction: NavigationDirection) -> StoredShortcut? {
         switch direction {
         case .left: ghosttyGotoSplitLeftShortcut

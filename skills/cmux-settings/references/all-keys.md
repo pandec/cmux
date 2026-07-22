@@ -27,6 +27,7 @@ General app preferences from Settings > App.
 | `app.warnBeforeClosingTab` | boolean | `true` | Show a confirmation before closing a tab. |
 | `app.renameSelectsExistingName` | boolean | `true` | Select the current name when opening rename flows. |
 | `app.commandPaletteSearchesAllSurfaces` | boolean | `false` | Search every surface in the command palette switcher instead of only the active workspace. |
+| `app.surfaceCycleOrder` | `"tabOrder"` or `"mostRecentlyUsed"` | `"tabOrder"` | Choose whether the Cycle Surfaces shortcuts follow visual tab order or most-recently-used focus order. |
 
 ## terminal
 

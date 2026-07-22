@@ -70,6 +70,20 @@ Default: `always` for stable and nightly builds. DEV builds always behave as `ne
 
 The older boolean `app.warnBeforeQuit` still works as a fallback when `app.confirmQuit` is not set. `true` maps to `always`; `false` maps to `never`.
 
+## `app.surfaceCycleOrder`
+
+Controls how the configurable Cycle Surfaces shortcuts choose their next tab. The default, `"tabOrder"`, follows the visual tab-bar order. Set it to `"mostRecentlyUsed"` to make Ctrl+Tab and Ctrl+Shift+Tab cycle through surfaces in recent-focus order; keep Control held to continue through a frozen list, then release it to commit the selection.
+
+```json
+{
+  "app": {
+    "surfaceCycleOrder": "mostRecentlyUsed"
+  }
+}
+```
+
+The shortcut actions are `cycleSurfaceForward` and `cycleSurfaceBackward`, and both can be rebound in **Settings > Keyboard Shortcuts** or under `shortcuts.bindings`. The existing Next Surface and Previous Surface actions continue to follow visual tab order.
+
 ## `app.forkConversationDefaultDestination`
 
 Controls what the tab right-click `Fork Conversation` item does. The submenu still exposes every destination.

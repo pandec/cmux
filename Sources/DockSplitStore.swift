@@ -89,6 +89,7 @@ final class DockSplitStore: BonsplitDelegate {
     @ObservationIgnored var pendingTerminalViewReattachPanelIds: Set<UUID> = []
     @ObservationIgnored let focusHistoryNavigation: any FocusHistoryNavigating
     @ObservationIgnored let terminalWorkingDirectoryResolver: TerminalWorkingDirectoryResolver
+    @ObservationIgnored let surfaceCycleModel = SurfaceCycleModel()
     private let settings: any SettingsReading
     private let settingsCatalog = SettingCatalog()
     let agentSessionAutoResumeDefaults: UserDefaults

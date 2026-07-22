@@ -6,6 +6,7 @@ extension AppDelegate {
     func handleAdjacentNavigationShortcut(event: NSEvent) -> Bool {
         let routedTabs = preferredMainWindowContextForShortcutRouting(event: event)?.tabManager
             ?? tabManager
+        if handleSurfaceCycleShortcut(event: event) { return true }
         if matchConfiguredShortcut(event: event, action: .nextSurface) {
             if performFocusedDockShortcut(.selectNextSurface, event: event) { return true }
             routedTabs?.selectNextSurface()

@@ -36,6 +36,10 @@ extension ShortcutAction {
         case .switchRightSidebarToFeed: return "Show Sidebar Feed"
         case .switchRightSidebarToDock: return "Show Sidebar Dock"
         case .triggerFlash: return "Flash Focused Panel"
+        case .cycleSurfaceForward:
+            return String(localized: "shortcut.cycleSurfaceForward.label", defaultValue: "Cycle Surfaces Forward")
+        case .cycleSurfaceBackward:
+            return String(localized: "shortcut.cycleSurfaceBackward.label", defaultValue: "Cycle Surfaces Backward")
         case .nextSurface: return "Next Surface"
         case .prevSurface: return "Previous Surface"
         case .moveSurfaceLeft: return String(localized: "shortcut.moveSurfaceLeft.label", defaultValue: "Reorder Surface Left")
