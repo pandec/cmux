@@ -15,6 +15,8 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
 
     @AppStorage(WorkspacePresentationModeSettings.modeKey)
     private var workspacePresentationMode = WorkspacePresentationModeSettings.defaultMode.rawValue
+    @AppStorage(TitlebarControlsStyle.storageKey)
+    private var titlebarControlsStyleRawValue = TitlebarControlsStyle.defaultRawValue
 
     private var isMinimalMode: Bool {
         WorkspacePresentationModeSettings.mode(for: workspacePresentationMode) == .minimal
@@ -22,17 +24,26 @@ struct MinimalModeSidebarTitlebarControlsOverlay: View {
 
     var body: some View {
         if isMinimalMode {
-            HiddenTitlebarSidebarControlsView(
-                unreadModel: unreadModel,
-                layoutModel: layoutModel,
-                onToggleSidebar: onToggleSidebar,
-                onToggleNotifications: onToggleNotifications,
-                onNewTab: onNewTab,
-                onFocusHistoryBack: onFocusHistoryBack,
-                onFocusHistoryForward: onFocusHistoryForward
-            )
-            .padding(.leading, leadingInset)
-            .padding(.top, topPadding)
+            GeometryReader { geometry in
+                let config = TitlebarControlsStyle.stored(rawValue: titlebarControlsStyleRawValue).config
+                let presentation = MinimalModeSidebarTitlebarControlsLayout.presentation(
+                    sidebarWidth: geometry.size.width,
+                    config: config,
+                    leadingInset: leadingInset
+                )
+                HiddenTitlebarSidebarControlsView(
+                    unreadModel: unreadModel,
+                    layoutModel: layoutModel,
+                    presentation: presentation,
+                    onToggleSidebar: onToggleSidebar,
+                    onToggleNotifications: onToggleNotifications,
+                    onNewTab: onNewTab,
+                    onFocusHistoryBack: onFocusHistoryBack,
+                    onFocusHistoryForward: onFocusHistoryForward
+                )
+                .padding(.leading, leadingInset)
+                .padding(.top, topPadding)
+            }
         }
     }
 }
