@@ -879,9 +879,10 @@ final class WindowDragHandleHitTests: XCTestCase {
     func testTitlebarControlGapsAreOutsideButtonHitColumns() {
         let config = TitlebarControlsStyle.classic.config
         let ranges = TitlebarControlsHitRegions.buttonXRanges(config: config)
-        XCTAssertEqual(ranges.count, MinimalModeSidebarControlActionSlot.allCases.count)
+        let expandedSlots = MinimalModeSidebarTitlebarControlsLayout.slots(for: .expanded)
+        XCTAssertEqual(ranges.count, expandedSlots.count)
         XCTAssertEqual(
-            MinimalModeSidebarControlActionSlot.allCases.map(\.accessibilityIdentifier),
+            expandedSlots.map(\.accessibilityIdentifier),
             [
                 "titlebarControl.toggleSidebar",
                 "titlebarControl.showNotifications",
@@ -963,6 +964,25 @@ final class WindowDragHandleHitTests: XCTestCase {
             ranges.last?.upperBound ?? 0,
             "The minimal-mode host must be wide enough to preserve the back/forward button lanes."
         )
+    }
+
+    func testCompactMenuRemainsAccessibleBeforePointerReveal() throws {
+        let target = MinimalModeSidebarControlActionView(
+            frame: NSRect(
+                x: 0,
+                y: 0,
+                width: MinimalModeSidebarTitlebarControlsMetrics.singleButtonHostWidth,
+                height: MinimalModeSidebarTitlebarControlsMetrics.hostHeight
+            )
+        )
+        target.presentation = .compact
+        target.requiresRevealedState = true
+        target.layoutSubtreeIfNeeded()
+
+        let compactButton = try XCTUnwrap(target.accessibilityChildren()?.first as? NSButton)
+        XCTAssertEqual(compactButton.accessibilityIdentifier(), "titlebarControl.compactMenu")
+        XCTAssertEqual(compactButton.accessibilityRole(), .menuButton)
+        XCTAssertTrue(compactButton.accessibilityPerformPress())
     }
 
     func testDragHandleYieldsToRegisteredMinimalModeSidebarButtonColumns() {
