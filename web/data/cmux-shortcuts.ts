@@ -257,6 +257,8 @@ export const shortcutCategories: ShortcutCategory[] = [
     blurbKey: "surfacesBlurb",
     shortcuts: [
       { id: "newSurface", combos: [["⌘", "T"]], description: { en: "New surface", ja: "新規サーフェス" } },
+      { id: "cycleSurfaceForward", combos: [["⌃", "Tab"]], description: { en: "Cycle surfaces forward", ja: "サーフェスを順方向に切り替え" } },
+      { id: "cycleSurfaceBackward", combos: [["⌃", "⇧", "Tab"]], description: { en: "Cycle surfaces backward", ja: "サーフェスを逆方向に切り替え" } },
       { id: "nextSurface", combos: [["⌘", "⇧", "]"]], description: { en: "Next surface", ja: "次のサーフェス" } },
       { id: "prevSurface", combos: [["⌘", "⇧", "["]], description: { en: "Previous surface", ja: "前のサーフェス" } },
       { id: "moveSurfaceLeft", combos: [["⌥", "⌘", "⇧", "["]], description: { en: "Move surface left", ja: "サーフェスを左へ移動" } },

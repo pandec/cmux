@@ -4,6 +4,7 @@ extension AppDelegate {
     /// Routes adjacent surface navigation and surface/workspace reordering through
     /// the main-window context selected for the key event.
     func handleAdjacentNavigationShortcut(event: NSEvent) -> Bool {
+        if handleSurfaceCycleShortcut(event: event) { return true }
         if matchConfiguredShortcut(event: event, action: .nextSurface) {
             if performFocusedDockShortcut(.selectNextSurface, event: event) { return true }
             (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectNextSurface()

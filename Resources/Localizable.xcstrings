@@ -149868,6 +149868,74 @@
         }
       }
     },
+    "settings.app.surfaceCycleOrder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surface Cycle Order"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーフェス切り替え順序"
+          }
+        }
+      }
+    },
+    "settings.app.surfaceCycleOrder.mostRecentlyUsed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recently Used"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近使った順"
+          }
+        }
+      }
+    },
+    "settings.app.surfaceCycleOrder.subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose whether the surface-cycle shortcuts follow tab-bar order or recent focus history."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーフェス切り替えショートカットで、タブバーの順序または最近のフォーカス履歴を使用します。"
+          }
+        }
+      }
+    },
+    "settings.app.surfaceCycleOrder.tabOrder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab Order"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "タブ順"
+          }
+        }
+      }
+    },
     "settings.app.warnBeforeQuit": {
       "extractionState": "manual",
       "localizations": {
@@ -172752,6 +172820,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "app.preferredEditor editor open file code vscode visual studio zed sublime subl cursor 應用程式 一般 偏好設定 行為 Dock 選單列 狀態 側邊欄 設定 設定檔 檔案 json 結構描述 文件 參考 編輯器 程式碼 開啟 路徑 App"
+          }
+        }
+      }
+    },
+    "settings.search.alias.setting.app.surface-cycle-order": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder surface cycle order ctrl-tab control-tab recently used mru tab order"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder サーフェス 切り替え 順序 ctrl-tab control-tab 最近使った mru タブ順"
           }
         }
       }
@@ -196869,6 +196954,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "新增工作區群組"
+          }
+        }
+      }
+    },
+    "shortcut.cycleSurfaceBackward.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cycle Surfaces Backward"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーフェスを逆方向に切り替え"
+          }
+        }
+      }
+    },
+    "shortcut.cycleSurfaceForward.label": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cycle Surfaces Forward"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "サーフェスを順方向に切り替え"
           }
         }
       }

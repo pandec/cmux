@@ -2017,6 +2017,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     func applicationWillResignActive(_ notification: Notification) {
         guard !isTerminatingApp else { return }
+        commitAllSurfaceCycles()
         PortScanner.shared.setTrackedAgentScanningPaused(true)
         clearConfiguredShortcutChordState()
         if Self.shouldSaveSessionSnapshotOnApplicationResign(isTerminatingApp: isTerminatingApp) {
@@ -12491,6 +12492,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 return event // Pass through
             }
             self.handleBrowserOmnibarSelectionRepeatLifecycleEvent(event)
+            if event.type == .flagsChanged {
+                self.finishSurfaceCyclesIfModifiersReleased(event.modifierFlags)
+            }
             if self.clearEscapeSuppressionForKeyUp(event: event, consumeIfSuppressed: true) {
                 return nil
             }
@@ -13891,18 +13895,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 return true
             }
             _ = performBrowserSplitShortcut(direction: .down)
-            return true
-        }
-
-        // Surface navigation (legacy Ctrl+Tab support)
-        if matchesLegacyNextSurfaceShortcut(event: event) {
-            if performFocusedDockShortcut(.selectNextSurface, event: event) { return true }
-            (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectNextSurface()
-            return true
-        }
-        if matchesLegacyPreviousSurfaceShortcut(event: event) {
-            if performFocusedDockShortcut(.selectPreviousSurface, event: event) { return true }
-            (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectPreviousSurface()
             return true
         }
 

@@ -56,6 +56,13 @@ extension Array where Element == CuratedSettingEntry {
             .init(section: .app, id: "palette-search-all", title: "Command Palette Searches All Surfaces", synonyms: "app.commandPaletteSearchesAllSurfaces command palette search all surfaces cmd-p terminal browser markdown"),
             .init(
                 section: .app,
+                id: "surface-cycle-order",
+                title: String(localized: "settings.app.surfaceCycleOrder", defaultValue: "Surface Cycle Order"),
+                paths: ["app.surfaceCycleOrder"],
+                synonyms: "surface cycle order ctrl-tab control-tab recently used mru tab order"
+            ),
+            .init(
+                section: .app,
                 id: "canvas-pane-gap",
                 title: String(localized: "settings.app.canvasPaneGap", defaultValue: "Canvas Pane Gap"),
                 paths: ["canvas.paneGap"],

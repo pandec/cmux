@@ -159,6 +159,12 @@ public struct AppCatalogSection: SettingCatalogSection {
         userDefaultsKey: "commandPalette.switcherSearchAllSurfaces"
     )
 
+    public let surfaceCycleOrder = DefaultsKey<SurfaceCycleOrder>(
+        id: "app.surfaceCycleOrder",
+        defaultValue: .tabOrder,
+        userDefaultsKey: "surfaceCycleOrder"
+    )
+
     public let fileDropDefaultBehavior = DefaultsKey<FileDropDefaultBehavior>(
         id: "app.fileDropDefaultBehavior",
         defaultValue: .text,

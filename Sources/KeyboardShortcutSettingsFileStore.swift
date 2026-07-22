@@ -544,6 +544,15 @@ final class CmuxSettingsFileStore {
                 snapshot.legacyDerivedManagedUserDefaultKeys.insert(confirmQuitKey)
             }
         }
+        if let raw = jsonString(section["surfaceCycleOrder"]) {
+            if let order = SurfaceCycleOrder(rawValue: raw) {
+                snapshot.managedUserDefaults[AppCatalogSection().surfaceCycleOrder.userDefaultsKey] = .string(order.rawValue)
+            } else {
+                logInvalid("app.surfaceCycleOrder", sourcePath: sourcePath)
+            }
+        } else if section.keys.contains("surfaceCycleOrder") {
+            logInvalid("app.surfaceCycleOrder", sourcePath: sourcePath)
+        }
     }
 
     private func parseNotificationsSection(

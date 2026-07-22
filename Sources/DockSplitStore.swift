@@ -61,6 +61,7 @@ final class DockSplitStore: BonsplitDelegate {
     @ObservationIgnored var terminalViewReattachCoalescingDepth = 0
     @ObservationIgnored var pendingTerminalViewReattachPanelIds: Set<UUID> = []
     @ObservationIgnored let focusHistoryNavigation: any FocusHistoryNavigating = FocusHistoryModel()
+    @ObservationIgnored let surfaceCycleModel = SurfaceCycleModel()
 
     /// Weak registry of every live Dock store. Lets control-surface routing
     /// resolve a Dock surface/pane by querying only the workspaces that actually

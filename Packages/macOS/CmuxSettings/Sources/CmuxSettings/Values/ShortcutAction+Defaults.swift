@@ -64,6 +64,8 @@ extension ShortcutAction {
         case .switchRightSidebarToFeed: return ShortcutStroke(key: "4", control: true)
         case .switchRightSidebarToDock: return ShortcutStroke(key: "5", control: true)
         case .triggerFlash: return ShortcutStroke(key: "h", command: true, shift: true)
+        case .cycleSurfaceForward: return ShortcutStroke(key: "\t", control: true)
+        case .cycleSurfaceBackward: return ShortcutStroke(key: "\t", shift: true, control: true)
         case .nextSidebarTab: return ShortcutStroke(key: "]", command: true, control: true)
         case .prevSidebarTab: return ShortcutStroke(key: "[", command: true, control: true)
         case .focusHistoryBack: return ShortcutStroke(key: "[", command: true)

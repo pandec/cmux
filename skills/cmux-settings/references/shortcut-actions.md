@@ -45,6 +45,8 @@ Values for `shortcuts.bindings.<action>`:
 
 ## Panes and surfaces
 
+- `shortcuts.bindings.cycleSurfaceForward`
+- `shortcuts.bindings.cycleSurfaceBackward`
 - `shortcuts.bindings.nextSurface`
 - `shortcuts.bindings.prevSurface`
 - `shortcuts.bindings.moveSurfaceLeft`
