@@ -24,3 +24,7 @@ Reviewed the complete diff against `origin/dev/bdec` with four independent lense
 - Add focused regression assertions for compact visual/hit alignment, expanded slot enumeration, accessibility availability/role/value, and suppression on the content click target.
 - Run the narrow titlebar and window/drag test suites plus repository localization/static gates.
 - Run a second cy-review pass only if the fixes materially change the interaction design.
+
+## Pass 2
+
+The focused second pass found one low-severity cleanup: after accessibility stopped depending on pointer reveal state, the old Combine subscriptions only repeated unchanged button synchronization on every hover/popover transition. Removed those subscriptions, their storage/import, and the now-redundant `requiresRevealedState` observer. Accessibility, correctness, and adversarial reviewers found no other verified repair regressions.
