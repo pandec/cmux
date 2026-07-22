@@ -4,3 +4,5 @@
 - `ADV-2` — rejected after verification: the SwiftUI actions remain a useful fallback path beneath the AppKit proxy; replacing the visual controls with a new passive renderer would add code without verified behavior benefit.
 
 No findings require a product decision.
+
+Pass 2 added no deferred findings.
