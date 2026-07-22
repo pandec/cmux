@@ -393,6 +393,7 @@ final class WindowDecorationsController {
         target.presentation = minimalModeSidebarTitlebarControlsPresentation(in: window)
         target.isEnabled = true
         target.requiresRevealedState = true
+        target.exposesAccessibility = false
         target.telemetryPrefix = "minimalSidebarTitlebarClickTarget"
         let windowIdentifier = ObjectIdentifier(window)
         target.onAction = { [weak self, weak target] slot, _, locationInWindow in
