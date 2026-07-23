@@ -6,8 +6,6 @@ struct SurfaceCycleSession: Equatable, Sendable {
     let scope: SurfaceCycleScope
     /// Modifier mask that must remain pressed to keep the session open.
     let requiredModifiers: UInt
-    /// Surface focused before the first cycle step.
-    let originalSurfaceID: UUID
     /// Frozen MRU ring, with the original surface at index zero.
     private(set) var ring: [UUID]
     /// Current selection within ``ring``.
@@ -34,7 +32,6 @@ struct SurfaceCycleSession: Equatable, Sendable {
         }
         self.scope = scope
         self.requiredModifiers = requiredModifiers
-        self.originalSurfaceID = currentSurfaceID
         self.ring = uniqueRing
         self.index = currentIndex
     }
