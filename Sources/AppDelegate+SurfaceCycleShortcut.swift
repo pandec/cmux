@@ -60,8 +60,7 @@ extension AppDelegate {
 
     func recordSurfaceCycleFocus(_ surfaceID: UUID, in host: any SurfaceCycleHosting) {
         if let activeSurfaceCycleHost, activeSurfaceCycleHost !== host {
-            self.activeSurfaceCycleHost = nil
-            activeSurfaceCycleHost.commitSurfaceCycle()
+            interruptActiveSurfaceCycle()
         }
         host.surfaceCycleModel.recordFocus(surfaceID)
         if activeSurfaceCycleHost === host, !host.surfaceCycleModel.hasActiveSession {
@@ -93,14 +92,15 @@ extension AppDelegate {
         requiredModifiers: UInt
     ) -> Bool {
         if let activeSurfaceCycleHost, activeSurfaceCycleHost !== host {
-            self.activeSurfaceCycleHost = nil
-            activeSurfaceCycleHost.commitSurfaceCycle()
+            interruptActiveSurfaceCycle()
         }
         activeSurfaceCycleHost = host
-        let consumed = host.performSurfaceCycle(
-            direction: direction,
-            requiredModifiers: requiredModifiers
-        )
+        let consumed = withSurfaceCycleSelection {
+            host.performSurfaceCycle(
+                direction: direction,
+                requiredModifiers: requiredModifiers
+            )
+        }
         if !host.surfaceCycleModel.hasActiveSession {
             activeSurfaceCycleHost = nil
         }
@@ -110,6 +110,26 @@ extension AppDelegate {
     private func commitActiveSurfaceCycle() {
         guard let activeSurfaceCycleHost else { return }
         self.activeSurfaceCycleHost = nil
-        activeSurfaceCycleHost.commitSurfaceCycle()
+        withSurfaceCycleSelection {
+            activeSurfaceCycleHost.commitSurfaceCycle()
+        }
+    }
+
+    func interruptActiveSurfaceCycle() {
+        guard let activeSurfaceCycleHost else { return }
+        self.activeSurfaceCycleHost = nil
+        activeSurfaceCycleHost.surfaceCycleModel.interrupt()
+    }
+
+    func interruptSurfaceCycleAfterExternalResponderChange() {
+        guard !isApplyingSurfaceCycleSelection else { return }
+        interruptActiveSurfaceCycle()
+    }
+
+    private func withSurfaceCycleSelection<T>(_ body: () -> T) -> T {
+        let wasApplying = isApplyingSurfaceCycleSelection
+        isApplyingSurfaceCycleSelection = true
+        defer { isApplyingSurfaceCycleSelection = wasApplying }
+        return body()
     }
 }

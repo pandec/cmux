@@ -125,6 +125,13 @@ public final class SurfaceCycleModel {
         return active.selectedSurfaceID
     }
 
+    /// Ends an active preview without selecting or promoting it.
+    ///
+    /// Use this when a newer explicit focus choice supersedes the held cycle.
+    public func interrupt() {
+        session = nil
+    }
+
     /// Clears the ledger and any active interaction.
     public func reset() {
         recentSurfaceIDs.removeAll(keepingCapacity: false)

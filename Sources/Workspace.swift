@@ -10853,6 +10853,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                 panelId: panelId
             )
         }
+        surfaceCycleModel.forget(panelId)
         if shouldSkipControlMasterCleanupAfterDetach, let detachedTransfer = detached, detachedTransfer.isRemoteTerminal {
             skipControlMasterCleanupAfterDetachedRemoteTransfer = true
             if detachedTransfer.remoteCleanupConfiguration == nil {
