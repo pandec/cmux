@@ -622,6 +622,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private let connectivityInvalidationSubscriberCoordinator = ConnectivityInvalidationSubscriberCoordinator()
     let workspacePresenceController = WorkspacePresenceController()
     private let sudoApprovalCoordinator: SudoApprovalCoordinator?
+    weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
 
     @MainActor
     final class MainWindowContext {

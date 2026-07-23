@@ -26,11 +26,16 @@ public final class SurfaceCycleModel {
     public var requiredModifiers: UInt? { session?.requiredModifiers }
 
     /// Records a completed user focus, promoting it to the front of the MRU ledger.
-    /// Intermediate preview selections are ignored while a cycle is active.
+    /// Intermediate preview selections are ignored while a cycle is active. A
+    /// different explicit focus ends the cycle so modifier release cannot
+    /// overwrite the user's newer choice.
     ///
     /// - Parameter surfaceID: Focused surface identifier.
     public func recordFocus(_ surfaceID: UUID) {
-        guard session == nil else { return }
+        if let session {
+            guard session.selectedSurfaceID != surfaceID else { return }
+            self.session = nil
+        }
         promote(surfaceID)
     }
 
@@ -118,15 +123,6 @@ public final class SurfaceCycleModel {
         session = nil
         promote(active.selectedSurfaceID)
         return active.selectedSurfaceID
-    }
-
-    /// Cancels the active cycle without changing recency.
-    ///
-    /// - Returns: Original surface to restore, or `nil` when no session exists.
-    public func cancel() -> UUID? {
-        guard let active = session else { return nil }
-        session = nil
-        return active.originalSurfaceID
     }
 
     /// Clears the ledger and any active interaction.

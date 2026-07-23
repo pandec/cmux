@@ -14,6 +14,7 @@ extension AppDelegate {
         }
 
         if currentSurfaceCycleOrder == .tabOrder {
+            commitActiveSurfaceCycle()
             let command: DockShortcutCommand = direction == .forward
                 ? .selectNextSurface
                 : .selectPreviousSurface
@@ -27,37 +28,44 @@ extension AppDelegate {
             return true
         }
 
-        let requiredModifiers = surfaceCycleRequiredModifiers(for: event)
+        let requiredModifiers = Self.surfaceCycleRequiredModifiers(from: event.modifierFlags)
         if let dock = focusedDockStoreForShortcut(preferredWindow: event.window) {
-            return dock.performSurfaceCycle(direction: direction, requiredModifiers: requiredModifiers)
+            return performSurfaceCycle(
+                on: dock,
+                direction: direction,
+                requiredModifiers: requiredModifiers
+            )
         }
         let workspace = (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectedWorkspace
-        return workspace?.performSurfaceCycle(
+        guard let workspace else { return true }
+        return performSurfaceCycle(
+            on: workspace,
             direction: direction,
             requiredModifiers: requiredModifiers
-        ) ?? true
+        )
     }
 
     func finishSurfaceCyclesIfModifiersReleased(_ modifiers: NSEvent.ModifierFlags) {
         let pressed = modifiers.intersection(.deviceIndependentFlagsMask).rawValue
-        for context in mainWindowContexts.values {
-            for workspace in context.tabManager.tabs where workspace.surfaceCycleModel.hasActiveSession {
-                workspace.finishSurfaceCycleIfModifiersReleased(pressed)
-            }
+        guard let activeSurfaceCycleHost,
+              activeSurfaceCycleHost.finishSurfaceCycleIfModifiersReleased(pressed) else {
+            return
         }
-        for dock in DockSplitStore.liveStores where dock.surfaceCycleModel.hasActiveSession {
-            dock.finishSurfaceCycleIfModifiersReleased(pressed)
-        }
+        self.activeSurfaceCycleHost = nil
     }
 
     func commitAllSurfaceCycles() {
-        for context in mainWindowContexts.values {
-            for workspace in context.tabManager.tabs where workspace.surfaceCycleModel.hasActiveSession {
-                workspace.commitSurfaceCycle()
-            }
+        commitActiveSurfaceCycle()
+    }
+
+    func recordSurfaceCycleFocus(_ surfaceID: UUID, in host: any SurfaceCycleHosting) {
+        if let activeSurfaceCycleHost, activeSurfaceCycleHost !== host {
+            self.activeSurfaceCycleHost = nil
+            activeSurfaceCycleHost.commitSurfaceCycle()
         }
-        for dock in DockSplitStore.liveStores where dock.surfaceCycleModel.hasActiveSession {
-            dock.commitSurfaceCycle()
+        host.surfaceCycleModel.recordFocus(surfaceID)
+        if activeSurfaceCycleHost === host, !host.surfaceCycleModel.hasActiveSession {
+            activeSurfaceCycleHost = nil
         }
     }
 
@@ -70,9 +78,38 @@ extension AppDelegate {
         return stored
     }
 
-    private func surfaceCycleRequiredModifiers(for event: NSEvent) -> UInt {
-        var modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        modifiers.remove([.shift, .capsLock, .function, .numericPad])
+    static func surfaceCycleRequiredModifiers(from flags: NSEvent.ModifierFlags) -> UInt {
+        var modifiers = flags.intersection(.deviceIndependentFlagsMask)
+        modifiers.remove([.capsLock, .function, .numericPad])
+        if modifiers.contains(.shift), !modifiers.subtracting(.shift).isEmpty {
+            modifiers.remove(.shift)
+        }
         return modifiers.rawValue
+    }
+
+    private func performSurfaceCycle(
+        on host: any SurfaceCycleHosting,
+        direction: SurfaceCycleDirection,
+        requiredModifiers: UInt
+    ) -> Bool {
+        if let activeSurfaceCycleHost, activeSurfaceCycleHost !== host {
+            self.activeSurfaceCycleHost = nil
+            activeSurfaceCycleHost.commitSurfaceCycle()
+        }
+        activeSurfaceCycleHost = host
+        let consumed = host.performSurfaceCycle(
+            direction: direction,
+            requiredModifiers: requiredModifiers
+        )
+        if !host.surfaceCycleModel.hasActiveSession {
+            activeSurfaceCycleHost = nil
+        }
+        return consumed
+    }
+
+    private func commitActiveSurfaceCycle() {
+        guard let activeSurfaceCycleHost else { return }
+        self.activeSurfaceCycleHost = nil
+        activeSurfaceCycleHost.commitSurfaceCycle()
     }
 }
