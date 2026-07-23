@@ -605,6 +605,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private let connectivityInvalidationSubscriberCoordinator =
         ConnectivityInvalidationSubscriberCoordinator()
     private let sudoApprovalCoordinator: SudoApprovalCoordinator?
+    weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
 
     private func isRunningUnderXCTest(_ env: [String: String]) -> Bool {
         // The CI wrapper uses xcodebuild's TEST_RUNNER_ forwarding so its marker
