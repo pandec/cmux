@@ -360,7 +360,6 @@ extension AppDelegate {
             shortcut: StoredShortcut(key: "\t", command: false, shift: true, option: false, control: true)
         )
     }
-
     func ghosttyGotoSplitShortcut(for direction: NavigationDirection) -> StoredShortcut? {
         switch direction {
         case .left: ghosttyGotoSplitLeftShortcut

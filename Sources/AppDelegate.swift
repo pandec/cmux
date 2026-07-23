@@ -622,6 +622,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private let connectivityInvalidationSubscriberCoordinator = ConnectivityInvalidationSubscriberCoordinator()
     let workspacePresenceController = WorkspacePresenceController()
     private let sudoApprovalCoordinator: SudoApprovalCoordinator?
+    weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
 
     @MainActor
     final class MainWindowContext {
@@ -2508,6 +2509,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
 
     func applicationWillResignActive(_ notification: Notification) {
         guard !isTerminatingApp else { return }
+        commitAllSurfaceCycles()
         PortScanner.shared.setTrackedAgentScanningPaused(true)
         clearConfiguredShortcutChordState()
         if Self.shouldSaveSessionSnapshotOnApplicationResign(isTerminatingApp: isTerminatingApp) {
@@ -14396,9 +14398,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private func installShortcutMonitor() {
         // Local monitor only receives events when app is active (not global)
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.keyDown, .keyUp, .flagsChanged, .systemDefined]
+            matching: [
+                .keyDown, .keyUp, .flagsChanged, .systemDefined,
+                .leftMouseDown, .rightMouseDown, .otherMouseDown,
+            ]
         ) { [weak self] event in
             guard let self else { return event }
+            if event.type == .leftMouseDown || event.type == .rightMouseDown || event.type == .otherMouseDown {
+                self.interruptActiveSurfaceCycle()
+                return event
+            }
             if ShortcutRecorderEventRouter.dispatchActiveRecordingEvent(
                 event,
                 preferredWindow: event.window ?? shortcutRoutingActiveWindow
@@ -14469,6 +14478,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 return event // Pass through
             }
             self.handleBrowserOmnibarSelectionRepeatLifecycleEvent(event)
+            if event.type == .flagsChanged {
+                self.finishSurfaceCyclesIfModifiersReleased(event.modifierFlags)
+            }
             if self.clearEscapeSuppressionForKeyUp(event: event, consumeIfSuppressed: true) {
                 return nil
             }
@@ -16200,32 +16212,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 return true
             }
             _ = performBrowserSplitShortcut(direction: .down)
-            return true
-        }
-
-        // Legacy Ctrl+Tab has no configurable action of its own. It
-        // intentionally reuses nextSurface/prevSurface for Dock ownership so
-        // both strokes follow the same routing classification.
-        if matchesLegacyNextSurfaceShortcut(event: event) {
-            if performFocusedDockShortcut(
-                .selectNextSurface,
-                action: .nextSurface,
-                event: event
-            ) {
-                return true
-            }
-            (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectNextSurface()
-            return true
-        }
-        if matchesLegacyPreviousSurfaceShortcut(event: event) {
-            if performFocusedDockShortcut(
-                .selectPreviousSurface,
-                action: .prevSurface,
-                event: event
-            ) {
-                return true
-            }
-            (preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager)?.selectPreviousSurface()
             return true
         }
 

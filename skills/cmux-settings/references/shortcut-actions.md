@@ -71,6 +71,10 @@ Values for `shortcuts.bindings.<action>`:
 - `shortcuts.bindings.focusTextBoxInput`
 - `shortcuts.bindings.focusUp`
 - `shortcuts.bindings.increaseWorkspaceTerminalFontSize`
+- `shortcuts.bindings.cycleSurfaceForward`
+- `shortcuts.bindings.cycleSurfaceBackward`
+- `shortcuts.bindings.nextSurface`
+- `shortcuts.bindings.prevSurface`
 - `shortcuts.bindings.moveSurfaceLeft`
 - `shortcuts.bindings.moveSurfaceRight`
 - `shortcuts.bindings.moveSurfaceToNextPane`

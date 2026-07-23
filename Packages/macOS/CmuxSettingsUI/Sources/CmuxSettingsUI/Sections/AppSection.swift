@@ -75,6 +75,7 @@ public struct AppSection: View {
     @State private var hideCloseButton: DefaultsValueModel<Bool>
     @State private var renameSelects: DefaultsValueModel<Bool>
     @State private var paletteAllSurfaces: DefaultsValueModel<Bool>
+    @State private var surfaceCycleOrder: DefaultsValueModel<SurfaceCycleOrder>
 
     @State private var languageAtAppear: AppLanguage?
     // Sticky: a picker change can rewrite the OS AppleLanguages override even when the selection returns to its starting value (clearing a preserved foreign override via an explicit pick, then System), so the restart hint must not rely on the value comparison alone.
@@ -147,6 +148,7 @@ public struct AppSection: View {
         _hideCloseButton = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.hideTabCloseButton))
         _renameSelects = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.renameSelectsExistingName))
         _paletteAllSurfaces = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.commandPaletteSearchesAllSurfaces))
+        _surfaceCycleOrder = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.surfaceCycleOrder))
     }
 
     private static let columnWidth: CGFloat = 196
@@ -170,6 +172,7 @@ public struct AppSection: View {
             AppChannelSwitchCard(hostActions: hostActions)
         }
         .task {
+            startSettingsObservation([surfaceCycleOrder])
             startSettingsObservation([language, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, focusHistoryIncludesPanesAndTabs, equalizeSplitsOnCreate, fileDrop, preferredEditor, openSupported, openMarkdown, globalFontMagnification, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, fileEditorSyntaxHighlighting, fileEditorLineNumbers, fileEditorIndentGuides, fileEditorCurrentLineHighlight, fileEditorTabWidth, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, desktopNotifications, agentPermissionPrompt, agentTurnComplete, agentIdleReminder, soundName, soundWhenFocused, soundCommand, customSoundFile, soundOverrides, telemetry, confirmQuit, warnCloseTab, warnCloseX, warnCloseWorkspace, warnCloseWindow, hideCloseButton, renameSelects, paletteAllSurfaces])
             await soundAgentCache.loadIfNeeded { await hostActions.notificationSoundAgentOptions() }
             if languageAtAppear == nil { languageAtAppear = language.current }; if telemetryAtAppear == nil { telemetryAtAppear = telemetry.current }
@@ -840,6 +843,27 @@ public struct AppSection: View {
                     .labelsHidden()
                     .controlSize(.small)
                     .disabled(telemetryManagedByPolicy)
+            }
+            SettingsCardDivider()
+
+            SettingsCardRow(
+                configurationReview: .json("app.surfaceCycleOrder"),
+                String(localized: "settings.app.surfaceCycleOrder", defaultValue: "Surface Cycle Order"),
+                subtitle: String(
+                    localized: "settings.app.surfaceCycleOrder.subtitle",
+                    defaultValue: "Choose whether the surface-cycle shortcuts follow tab-bar order or recent focus history."
+                ),
+                controlWidth: Self.columnWidth
+            ) {
+                Picker("", selection: Binding(get: { surfaceCycleOrder.current }, set: { surfaceCycleOrder.set($0) })) {
+                    Text(String(localized: "settings.app.surfaceCycleOrder.tabOrder", defaultValue: "Tab Order"))
+                        .tag(SurfaceCycleOrder.tabOrder)
+                    Text(String(localized: "settings.app.surfaceCycleOrder.mostRecentlyUsed", defaultValue: "Recently Used"))
+                        .tag(SurfaceCycleOrder.mostRecentlyUsed)
+                }
+                .labelsHidden()
+                .pickerStyle(.segmented)
+                .controlSize(.small)
             }
             SettingsCardDivider()
 
