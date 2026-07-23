@@ -270,9 +270,14 @@ private enum MainWindowKeyRegainRefresh {
 }
 
 extension AppDelegate {
+    static func shouldInterruptSurfaceCycleOnWindowResign(isApplicationActive: Bool) -> Bool {
+        isApplicationActive
+    }
+
     func handleCmuxWindowBecameKey(_ note: Notification) {
         guard let window = note.object as? NSWindow else { return }
         MainActor.assumeIsolated {
+            interruptActiveSurfaceCycle()
             let context = senderRelativeMainWindowContext(for: window)
             setActiveMainWindow(window)
             if let windowId = mainWindowId(from: window) {
@@ -293,6 +298,11 @@ extension AppDelegate {
     func handleCmuxWindowResignedKey(_ note: Notification) {
         guard let window = note.object as? NSWindow else { return }
         MainActor.assumeIsolated {
+            // During app deactivation, applicationWillResignActive owns the cycle
+            // commit. Only a key-window handoff within the active app interrupts it.
+            if Self.shouldInterruptSurfaceCycleOnWindowResign(isApplicationActive: NSApp.isActive) {
+                interruptActiveSurfaceCycle()
+            }
             if let windowId = mainWindowId(from: window) {
                 publishCmuxWindowLifecycle(
                     name: "window.unkeyed",

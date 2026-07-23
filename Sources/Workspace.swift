@@ -2863,6 +2863,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
     let tabDragTransferRegistry: TabDragTransferRegistry
     /// One content-change pipeline shared by every file-backed panel in this workspace.
     let fileContentChangeCoordinator: FileContentChangeCoordinator
+    let surfaceCycleModel = SurfaceCycleModel()
 
     /// Backing store for `dockSplit`, created on first access. Kept optional so
     /// workspace teardown can tear down the Dock only when it was actually used
@@ -11591,6 +11592,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                 panelId: panelId
             )
         }
+        surfaceCycleModel.forget(panelId)
         if shouldSkipControlMasterCleanupAfterDetach, let detachedTransfer = detached, detachedTransfer.isRemoteTerminal {
             skipControlMasterCleanupAfterDetachedRemoteTransfer = true
             if detachedTransfer.remoteCleanupConfiguration == nil {
@@ -12054,6 +12056,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
         previousHostedView: GhosttySurfaceScrollView? = nil,
         trigger: FocusPanelTrigger = .standard,
         focusIntent: PanelFocusIntent? = nil,
+        resumeHibernatedAgent: Bool = true,
         focusTransactionId: UUID? = nil
     ) {
         guard !remoteTmuxMirrorInterceptsFocusPanel(panelId, previousHostedView: previousHostedView, trigger: trigger, focusIntent: focusIntent) else { return }
@@ -12137,6 +12140,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                     inPane: targetPaneId,
                     reassertAppKitFocus: false,
                     focusIntent: activationIntent,
+                    resumeHibernatedAgent: resumeHibernatedAgent,
                     focusTransactionId: effectiveFocusTransactionId,
                     previousTerminalHostedView: previousTerminalHostedView
                 )
@@ -12175,7 +12179,7 @@ final class Workspace: Identifiable, ObservableObject, FilePreviewTabMetadataHos
                 inPane: targetPaneId,
                 reassertAppKitFocus: !shouldSuppressReentrantRefocus,
                 focusIntent: activationIntent,
-                resumeHibernatedAgent: true,
+                resumeHibernatedAgent: resumeHibernatedAgent,
                 focusTransactionId: effectiveFocusTransactionId,
                 previousTerminalHostedView: previousTerminalHostedView
             )
@@ -14146,6 +14150,8 @@ extension Workspace: BonsplitDelegate {
         let panelId = effectiveFocusedPanelId
         // The user reached this pane, so its finished OSC 7501 records have been seen.
         dismissCompletedProgramStatus(panelId: panelId)
+        let shouldApplyPanelFocus =
+            (panel as? TerminalPanel)?.isAgentHibernated != true || shouldResumeHibernatedAgent
         if let terminalPanel = panel as? TerminalPanel {
             if terminalPanel.isAgentHibernated, shouldResumeHibernatedAgent {
                 _ = resumeAgentHibernation(panelId: panelId, focus: false)
@@ -14185,7 +14191,8 @@ extension Workspace: BonsplitDelegate {
         activatePanel(
             activationPanel,
             focusIntent: activationIntent,
-            reassertAppKitFocus: reassertAppKitFocus,
+            reassertAppKitFocus: reassertAppKitFocus && shouldApplyPanelFocus,
+            activateHibernatedTerminal: shouldApplyPanelFocus,
             focusTransactionId: transactionId
         )
         let focusIntentAllowsBrowserOmnibarAutofocus =
@@ -14202,7 +14209,8 @@ extension Workspace: BonsplitDelegate {
 
         // Converge AppKit first responder with bonsplit's selected tab in the focused pane.
         // Without this, keyboard input can remain on a different terminal than the blue tab indicator.
-        if reassertAppKitFocus, let terminalPanel = activationPanel as? TerminalPanel {
+        if reassertAppKitFocus && shouldApplyPanelFocus,
+           let terminalPanel = activationPanel as? TerminalPanel {
             if shouldMoveTerminalSurfaceFocus(for: activationIntent) {
                 if !terminalPanel.hostedView.isSurfaceViewFirstResponder() {
 #if DEBUG
@@ -14240,7 +14248,7 @@ extension Workspace: BonsplitDelegate {
                 isVisibleInUI: true,
                 reason: "workspace.restoreFocusIntent"
             )
-        } else if shouldRestoreFocusIntentAfterActivation(activationIntent) {
+        } else if shouldApplyPanelFocus && shouldRestoreFocusIntentAfterActivation(activationIntent) {
             _ = activationPanel.restoreFocusIntent(activationIntent)
         }
 
@@ -14255,6 +14263,11 @@ extension Workspace: BonsplitDelegate {
         }
         gitBranch = panelGitBranches[panelId]
         pullRequest = panelPullRequests[panelId]
+        if let appDelegate = AppDelegate.shared {
+            appDelegate.recordSurfaceCycleFocus(panelId, in: self)
+        } else {
+            surfaceCycleModel.recordFocus(panelId)
+        }
 
         // Broadcast the focus change. This is deferred + coalesced (not posted
         // synchronously) so the `@Published` mutations above settle before any
@@ -14285,6 +14298,7 @@ extension Workspace: BonsplitDelegate {
         _ panel: any Panel,
         focusIntent: PanelFocusIntent,
         reassertAppKitFocus: Bool,
+        activateHibernatedTerminal: Bool = true,
         focusTransactionId: UUID? = nil
     ) {
         // Bonsplit invokes selection callbacks synchronously while a session
@@ -14304,6 +14318,11 @@ extension Workspace: BonsplitDelegate {
             return
         }
         if let terminalPanel = panel as? TerminalPanel {
+            guard activateHibernatedTerminal else {
+                terminalPanel.surface.setFocus(false)
+                terminalPanel.hostedView.setActive(false)
+                return
+            }
             let shouldFocusTerminalSurface = shouldMoveTerminalSurfaceFocus(for: focusIntent)
             terminalPanel.surface.setFocus(shouldFocusTerminalSurface)
             terminalPanel.hostedView.setActive(true)
@@ -14838,6 +14857,7 @@ extension Workspace: BonsplitDelegate {
         )
         if !isDetaching {
             owningTabManager?.invalidateFocusHistoryTarget(workspaceId: id, panelId: panelId)
+            surfaceCycleModel.forget(panelId)
         }
         syncRemotePortScanTTYs()
         recomputeListeningPorts()
@@ -15047,6 +15067,7 @@ extension Workspace: BonsplitDelegate {
                 )
                 if !isDetachingCloseTransaction {
                     owningTabManager?.invalidateFocusHistoryTarget(workspaceId: id, panelId: panelId)
+                    surfaceCycleModel.forget(panelId)
                 }
             }
 
