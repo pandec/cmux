@@ -278,6 +278,7 @@ extension DockSplitStore {
                     preservingTransfer: true
                 )
         }
+        surfaceCycleModel.forget(panelId)
 
         let detached = Workspace.DetachedSurfaceTransfer(
             sourceWorkspaceId: workspaceId,

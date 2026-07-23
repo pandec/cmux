@@ -95,12 +95,10 @@ extension AppDelegate {
             interruptActiveSurfaceCycle()
         }
         activeSurfaceCycleHost = host
-        let consumed = withSurfaceCycleSelection {
-            host.performSurfaceCycle(
-                direction: direction,
-                requiredModifiers: requiredModifiers
-            )
-        }
+        let consumed = host.performSurfaceCycle(
+            direction: direction,
+            requiredModifiers: requiredModifiers
+        )
         if !host.surfaceCycleModel.hasActiveSession {
             activeSurfaceCycleHost = nil
         }
@@ -110,26 +108,12 @@ extension AppDelegate {
     private func commitActiveSurfaceCycle() {
         guard let activeSurfaceCycleHost else { return }
         self.activeSurfaceCycleHost = nil
-        withSurfaceCycleSelection {
-            activeSurfaceCycleHost.commitSurfaceCycle()
-        }
+        activeSurfaceCycleHost.commitSurfaceCycle()
     }
 
     func interruptActiveSurfaceCycle() {
         guard let activeSurfaceCycleHost else { return }
         self.activeSurfaceCycleHost = nil
         activeSurfaceCycleHost.surfaceCycleModel.interrupt()
-    }
-
-    func interruptSurfaceCycleAfterExternalResponderChange() {
-        guard !isApplyingSurfaceCycleSelection else { return }
-        interruptActiveSurfaceCycle()
-    }
-
-    private func withSurfaceCycleSelection<T>(_ body: () -> T) -> T {
-        let wasApplying = isApplyingSurfaceCycleSelection
-        isApplyingSurfaceCycleSelection = true
-        defer { isApplyingSurfaceCycleSelection = wasApplying }
-        return body()
     }
 }

@@ -117,6 +117,26 @@ struct SurfaceCycleModelTests {
         #expect(model.cycleOrder(candidates: [a, b, c]) == [c, a, b])
     }
 
+    @Test("Interrupting abandons a preview without changing remembered order")
+    func interruptAbandonsPreview() throws {
+        let model = SurfaceCycleModel()
+        model.recordFocus(c)
+        model.recordFocus(b)
+        model.recordFocus(a)
+        #expect(model.cycle(
+            candidates: [a, b, c],
+            currentSurfaceID: a,
+            scope: scope,
+            direction: .forward,
+            requiredModifiers: 1
+        ) == b)
+
+        model.interrupt()
+
+        #expect(!model.hasActiveSession)
+        #expect(model.cycleOrder(candidates: [a, b, c]) == [a, b, c])
+    }
+
     @Test("Forgetting a closed surface removes it from remembered order")
     func forgetClosedSurface() {
         let model = SurfaceCycleModel()
