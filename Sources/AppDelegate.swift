@@ -606,7 +606,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         ConnectivityInvalidationSubscriberCoordinator()
     private let sudoApprovalCoordinator: SudoApprovalCoordinator?
     weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
-    var isApplyingSurfaceCycleSelection = false
 
     private func isRunningUnderXCTest(_ env: [String: String]) -> Bool {
         // The CI wrapper uses xcodebuild's TEST_RUNNER_ forwarding so its marker
@@ -19306,7 +19305,6 @@ private extension NSWindow {
             result = cmux_makeFirstResponder(responder)
         }
         if result {
-            AppDelegate.shared?.interruptSurfaceCycleAfterExternalResponderChange()
             AppDelegate.shared?.postBrowserInspectorClickIntentIfNeeded(for: responder, in: self, event: currentEvent)
             if let fieldEditor = responder as? NSTextView, fieldEditor.isFieldEditor {
                 Self.cmuxTrackFieldEditor(fieldEditor, owningWebView: responderWebView)
