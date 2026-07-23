@@ -1,6 +1,6 @@
 ---
 name: cmux
-description: End-user control of cmux topology and routing (windows, workspaces, panes/surfaces, focus, moves, reorder, identify, trigger flash). Use when automation needs deterministic placement and navigation in a multi-pane cmux layout.
+description: End-user control of cmux topology and routing, plus Bartosz fork maintenance and upstream-sync workflow. Use for deterministic cmux placement/navigation or when aligning, testing, rebuilding, or cleaning the dev/bdec personal build.
 ---
 
 # cmux Core Control
@@ -74,48 +74,75 @@ dev/bdec
 
 Treat `dev/bdec` as the fork main for future updates. Do not base new personal-fork work on the old `dev/local` branch unless the user explicitly asks; `dev/local` contains older local experiments and extra mess.
 
-The intended shape of `dev/bdec` is a small stack on top of current `upstream/main`:
+The intended shape of `dev/bdec` is a small personal stack on top of current `upstream/main`. Preserve the currently merged fork work, including:
 
 1. `Support Home/End/PageUp/PageDown as shortcut keys`
 2. `Lower minimum sidebar width from 180 to 120`
+3. Compact narrow-sidebar titlebar controls
+4. Configurable MRU surface cycling
+5. This project-local cmux skill
 
-When updating to a newer upstream, create or refresh a worktree from `upstream/main`, then replay only those personal commits unless the user asks for more. Verify the resulting branch is only the expected number of commits ahead:
+### Upstream sync
 
-```bash
-git fetch upstream main
-git checkout dev/bdec
-git rev-list --count upstream/main..HEAD
-git diff --stat upstream/main..HEAD
-```
+Keep the running `dev-bdec` app and main checkout untouched while preparing an update:
 
-For isolated builds of this branch, use tag `dev-bdec`:
+1. Fetch `upstream/main` and `origin/dev/bdec` without recursively fetching submodules. Record the old and new upstream SHAs.
+2. Create the next `dev/bdecN` sibling worktree from `dev/bdec`, then rebase with `--rebase-merges` onto `upstream/main`.
+3. Preserve all current personal commits and merged PR behavior. Drop a fork commit only when the upstream range contains an equivalent or newer change, and report it.
+4. Verify with `git range-diff`, the ahead count, a clean status, exact submodule revisions, an isolated tagged app build, and the `cmux-unit` scheme when app/package/test APIs changed.
+5. Push the test branch before dogfood.
 
-```bash
-./scripts/reload.sh --tag dev-bdec
-```
-
-On this machine, the full Ghostty CLI helper build may fail if Xcode's Metal Toolchain is missing. It is acceptable for Swift/app verification to use the repo-supported skip:
+For a test build, copy only preferences from the real `dev-bdec` bundle. Never copy its session/workspace JSON. Remove or archive any stale test session before launch so the test app starts with a fresh workspace while retaining shortcuts and settings.
 
 ```bash
-CMUX_SKIP_ZIG_BUILD=1 PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" ./scripts/reload.sh --tag dev-bdec
-```
-
-The previous working personal app was `cmux DEV local`, bundle id `com.cmuxterm.app.debug.local`. The new personal app is `cmux DEV dev-bdec`, bundle id `com.cmuxterm.app.debug.dev.bdec`. When preparing a fresh `dev-bdec` build, copy preferences and session state from the old local build so shortcuts and layout carry over:
-
-```bash
-SRC_BUNDLE="com.cmuxterm.app.debug.local"
-DST_BUNDLE="com.cmuxterm.app.debug.dev.bdec"
-TMP_PREF="$(mktemp /tmp/cmux-local-prefs.XXXXXX.plist)"
+SRC_BUNDLE="com.cmuxterm.app.debug.dev.bdec"
+DST_BUNDLE="com.cmuxterm.app.debug.dev.bdecN"
+TMP_PREF="$(mktemp /tmp/cmux-dev-bdecN-prefs.XXXXXX.plist)"
 defaults export "$SRC_BUNDLE" "$TMP_PREF"
 defaults import "$DST_BUNDLE" "$TMP_PREF"
-rm -f "$TMP_PREF"
 
-SRC_SESSION="$HOME/Library/Application Support/cmux/session-${SRC_BUNDLE}.json"
-DST_SESSION="$HOME/Library/Application Support/cmux/session-${DST_BUNDLE}.json"
-if [ -f "$SRC_SESSION" ]; then
-  cp -p "$SRC_SESSION" "$DST_SESSION"
-fi
+TEST_SESSION="$HOME/Library/Application Support/cmux/session-${DST_BUNDLE}.json"
+# Archive TMP_PREF and TEST_SESSION instead of deleting them when present.
 ```
+
+Build the candidate with its numbered tag and launch the app bundle through LaunchServices:
+
+```bash
+CMUX_SKIP_ZIG_BUILD=1 PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" \
+  ./scripts/reload.sh --tag dev-bdecN
+open -n "$HOME/Library/Developer/Xcode/DerivedData/cmux-dev-bdecN/Build/Products/Debug/cmux DEV dev-bdecN.app"
+```
+
+After the user approves the candidate:
+
+1. Back up the real `dev-bdec` plist and session JSON beside the originals with a timestamp; verify byte-identical checksums.
+2. Promote the exact tested commit to `dev/bdec` and push with an exact `--force-with-lease`.
+3. Build tag `dev-bdec`, launch its `.app` with `open -n`, and verify its process, socket, and restored workspace list.
+4. Never copy the test session or test preferences back to the real bundle.
+
+### Required cleanup
+
+Every completed upstream sync must remove all test leftovers after the real app is verified:
+
+- Stop the numbered test app.
+- Remove its sibling worktree and local/remote test branch.
+- Archive/remove its preferences, session JSON, tagged DerivedData, `/tmp/cmux-<tag>` and unit-build directories, debug socket/log, and `cmuxd-dev-<tag>.sock`.
+- Reinitialize the main checkout's submodules after removing a worktree with initialized submodules.
+- Confirm no test refs, paths, processes, sockets, or logs remain.
+- Preserve unrelated main-checkout changes and the real `dev-bdec` backups.
+
+Move filesystem artifacts into one timestamped Trash folder when practical so cleanup is recoverable.
+
+### Required final summary
+
+End every upstream sync with:
+
+1. The old and new upstream SHAs and the resulting `dev/bdec` ahead count.
+2. A concise, user-facing summary of what changed in the pulled upstream range, grouped by meaningful cmux areas rather than a raw commit list. Use the recorded upstream range with `git log` and `git diff --stat`.
+3. A separate note for fork commits preserved, changed during conflict resolution, or dropped because upstream superseded them.
+4. Build/test verification, real app/session verification, backup paths, and explicit confirmation that all test artifacts were cleaned.
+
+Do not omit the upstream-change summary even when the rebase is conflict-free.
 
 Important launch note: on this machine, `reload.sh --launch` may start a tagged app by directly running `Contents/MacOS/cmux DEV`, which can exit immediately. If the tagged app closes right away with no crash, launch the app bundle through LaunchServices instead:
 
