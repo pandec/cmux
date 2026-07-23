@@ -1,5 +1,6 @@
 import XCTest
 import CmuxSettings
+import CmuxWorkspaces
 @testable import CmuxSettingsUI
 
 #if canImport(cmux_DEV)
@@ -280,6 +281,66 @@ final class KeyboardShortcutContextTests: XCTestCase {
                 action.rawValue
             )
         }
+    }
+
+    func testSurfaceCycleShortcutCatalogsStayAligned() throws {
+        let actions: [KeyboardShortcutSettings.Action] = [
+            .cycleSurfaceForward,
+            .cycleSurfaceBackward,
+        ]
+        for action in actions {
+            let settingsAction = try XCTUnwrap(
+                ShortcutAction(rawValue: action.rawValue),
+                "Expected CmuxSettings.ShortcutAction for \(action.rawValue)"
+            )
+            XCTAssertEqual(settingsAction.displayName, action.label, action.rawValue)
+            assertShortcut(
+                settingsAction.defaultShortcut,
+                matches: action.defaultShortcut,
+                action: action.rawValue
+            )
+        }
+    }
+
+    @MainActor
+    func testSurfaceCycleHeldModifiersKeepShiftWhenItIsTheOnlyModifier() {
+        XCTAssertEqual(
+            AppDelegate.surfaceCycleRequiredModifiers(from: [.control, .shift]),
+            NSEvent.ModifierFlags.control.rawValue
+        )
+        XCTAssertEqual(
+            AppDelegate.surfaceCycleRequiredModifiers(from: [.shift]),
+            NSEvent.ModifierFlags.shift.rawValue
+        )
+        XCTAssertEqual(
+            AppDelegate.surfaceCycleRequiredModifiers(from: [.command, .shift]),
+            NSEvent.ModifierFlags.command.rawValue
+        )
+    }
+
+    @MainActor
+    func testFocusInAnotherHostCommitsOnlyTheActiveSurfaceCycle() {
+        let a = UUID()
+        let b = UUID()
+        let c = UUID()
+        let d = UUID()
+        let hostA = SurfaceCycleCoordinatorTestHost(candidates: [a, b], current: a)
+        let hostB = SurfaceCycleCoordinatorTestHost(candidates: [c, d], current: c)
+        hostA.surfaceCycleModel.recordFocus(b)
+        hostA.surfaceCycleModel.recordFocus(a)
+        XCTAssertTrue(hostA.performSurfaceCycle(direction: .forward, requiredModifiers: 1))
+
+        let appDelegate = AppDelegate()
+        appDelegate.activeSurfaceCycleHost = hostA
+        appDelegate.recordSurfaceCycleFocus(c, in: hostB)
+
+        XCTAssertEqual(hostA.selections, [
+            .init(surfaceID: b, isPreview: true),
+            .init(surfaceID: b, isPreview: false),
+        ])
+        XCTAssertFalse(hostA.surfaceCycleModel.hasActiveSession)
+        XCTAssertNil(appDelegate.activeSurfaceCycleHost)
+        XCTAssertEqual(hostB.surfaceCycleModel.cycleOrder(candidates: [c, d]), [c, d])
     }
 
     // Regression: on European layouts (German QWERTZ, French AZERTY, Nordic, ...)
@@ -692,5 +753,62 @@ final class KeyboardShortcutContextTests: XCTestCase {
             withIntermediateDirectories: true
         )
         try contents.write(to: url, atomically: true, encoding: .utf8)
+    }
+
+    private func assertShortcut(
+        _ settingsShortcut: CmuxSettings.StoredShortcut?,
+        matches runtimeShortcut: StoredShortcut,
+        action: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        guard let settingsShortcut else {
+            XCTAssertTrue(runtimeShortcut.isUnbound, action, file: file, line: line)
+            return
+        }
+        XCTAssertEqual(settingsShortcut.first.key, runtimeShortcut.firstStroke.key, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.first.command, runtimeShortcut.firstStroke.command, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.first.shift, runtimeShortcut.firstStroke.shift, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.first.option, runtimeShortcut.firstStroke.option, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.first.control, runtimeShortcut.firstStroke.control, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.first.keyCode, runtimeShortcut.firstStroke.keyCode, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.key, runtimeShortcut.secondStroke?.key, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.command, runtimeShortcut.secondStroke?.command, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.shift, runtimeShortcut.secondStroke?.shift, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.option, runtimeShortcut.secondStroke?.option, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.control, runtimeShortcut.secondStroke?.control, action, file: file, line: line)
+        XCTAssertEqual(settingsShortcut.second?.keyCode, runtimeShortcut.secondStroke?.keyCode, action, file: file, line: line)
+    }
+}
+
+@MainActor
+private final class SurfaceCycleCoordinatorTestHost: SurfaceCycleHosting {
+    struct Selection: Equatable {
+        let surfaceID: UUID
+        let isPreview: Bool
+    }
+
+    let surfaceCycleModel = SurfaceCycleModel()
+    let scope = SurfaceCycleScope.pane(UUID())
+    var candidates: [UUID]
+    var current: UUID
+    var selections: [Selection] = []
+
+    init(candidates: [UUID], current: UUID) {
+        self.candidates = candidates
+        self.current = current
+    }
+
+    var currentSurfaceCycleScope: SurfaceCycleScope? { scope }
+    var currentSurfaceCycleSurfaceID: UUID? { current }
+
+    func surfaceCycleCandidates(in scope: SurfaceCycleScope) -> [UUID] {
+        scope == self.scope ? candidates : []
+    }
+
+    func selectSurfaceForCycle(_ surfaceID: UUID, in scope: SurfaceCycleScope, isPreview: Bool) {
+        current = surfaceID
+        selections.append(.init(surfaceID: surfaceID, isPreview: isPreview))
+        surfaceCycleModel.recordFocus(surfaceID)
     }
 }
