@@ -99,19 +99,97 @@ struct SurfaceCycleModelTests {
         #expect(model.cycleOrder(candidates: [a, b, c]) == [c, a, b])
     }
 
-    @Test("Cancelling restores the original without changing recency")
-    func cancelPreservesLedger() throws {
+    @Test("An explicit focus outside the preview ends the held cycle")
+    func explicitFocusInterruptsCycle() throws {
         let model = SurfaceCycleModel()
+        model.recordFocus(c)
         model.recordFocus(b)
         model.recordFocus(a)
         #expect(model.cycle(
-            candidates: [a, b],
+            candidates: [a, b, c],
             currentSurfaceID: a,
             scope: scope,
             direction: .forward,
             requiredModifiers: 1
         ) == b)
-        #expect(model.cancel() == a)
-        #expect(model.cycleOrder(candidates: [a, b]) == [a, b])
+        model.recordFocus(c)
+        #expect(!model.hasActiveSession)
+        #expect(model.cycleOrder(candidates: [a, b, c]) == [c, a, b])
+    }
+
+    @Test("Forgetting a closed surface removes it from remembered order")
+    func forgetClosedSurface() {
+        let model = SurfaceCycleModel()
+        model.recordFocus(a)
+        model.recordFocus(b)
+        model.forget(b)
+        #expect(model.cycleOrder(candidates: [a, b, c]) == [a, b, c])
+    }
+
+    @Test("Modifier release previews once and then fully activates the selection")
+    func modifierReleaseCommitsPreview() throws {
+        let host = TestSurfaceCycleHost(scope: scope, candidates: [a, b], current: a)
+        host.surfaceCycleModel.recordFocus(b)
+        host.surfaceCycleModel.recordFocus(a)
+
+        #expect(host.performSurfaceCycle(direction: .forward, requiredModifiers: 1))
+        #expect(host.selections == [.init(surfaceID: b, isPreview: true)])
+        #expect(!host.finishSurfaceCycleIfModifiersReleased(1))
+        #expect(host.finishSurfaceCycleIfModifiersReleased(0))
+        #expect(host.selections == [
+            .init(surfaceID: b, isPreview: true),
+            .init(surfaceID: b, isPreview: false),
+        ])
+        #expect(!host.surfaceCycleModel.hasActiveSession)
+    }
+
+    @Test("Closing the previewed surface reconciles before commit")
+    func closeDuringCycleReconcilesSelection() throws {
+        let host = TestSurfaceCycleHost(scope: scope, candidates: [a, b, c], current: a)
+        host.surfaceCycleModel.recordFocus(c)
+        host.surfaceCycleModel.recordFocus(b)
+        host.surfaceCycleModel.recordFocus(a)
+
+        #expect(host.performSurfaceCycle(direction: .forward, requiredModifiers: 1))
+        #expect(host.currentSurfaceCycleSurfaceID == b)
+        host.candidates.removeAll { $0 == b }
+        host.surfaceCycleModel.forget(b)
+        host.commitSurfaceCycle()
+
+        #expect(host.selections.last == .init(surfaceID: c, isPreview: false))
+        #expect(!host.surfaceCycleModel.hasActiveSession)
+    }
+}
+
+@MainActor
+private final class TestSurfaceCycleHost: SurfaceCycleHosting {
+    struct Selection: Equatable {
+        let surfaceID: UUID
+        let isPreview: Bool
+    }
+
+    let surfaceCycleModel = SurfaceCycleModel()
+    let scope: SurfaceCycleScope
+    var candidates: [UUID]
+    var current: UUID
+    var selections: [Selection] = []
+
+    init(scope: SurfaceCycleScope, candidates: [UUID], current: UUID) {
+        self.scope = scope
+        self.candidates = candidates
+        self.current = current
+    }
+
+    var currentSurfaceCycleScope: SurfaceCycleScope? { scope }
+    var currentSurfaceCycleSurfaceID: UUID? { current }
+
+    func surfaceCycleCandidates(in scope: SurfaceCycleScope) -> [UUID] {
+        scope == self.scope ? candidates : []
+    }
+
+    func selectSurfaceForCycle(_ surfaceID: UUID, in scope: SurfaceCycleScope, isPreview: Bool) {
+        current = surfaceID
+        selections.append(.init(surfaceID: surfaceID, isPreview: isPreview))
+        surfaceCycleModel.recordFocus(surfaceID)
     }
 }

@@ -12046,7 +12046,11 @@ extension Workspace: BonsplitDelegate {
         }
         gitBranch = panelGitBranches[panelId]
         pullRequest = panelPullRequests[panelId]
-        surfaceCycleModel.recordFocus(panelId)
+        if let appDelegate = AppDelegate.shared {
+            appDelegate.recordSurfaceCycleFocus(panelId, in: self)
+        } else {
+            surfaceCycleModel.recordFocus(panelId)
+        }
 
         // Broadcast the focus change. This is deferred + coalesced (not posted
         // synchronously) so the `@Published` mutations above settle before any
