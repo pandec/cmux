@@ -1,17 +1,17 @@
-public import Foundation
+import Foundation
 
 /// Frozen candidate ring for one modifier-held surface-cycle interaction.
-public struct SurfaceCycleSession: Equatable, Sendable {
+struct SurfaceCycleSession: Equatable, Sendable {
     /// Scope whose candidates were captured when cycling began.
-    public let scope: SurfaceCycleScope
+    let scope: SurfaceCycleScope
     /// Modifier mask that must remain pressed to keep the session open.
-    public let requiredModifiers: UInt
+    let requiredModifiers: UInt
     /// Surface focused before the first cycle step.
-    public let originalSurfaceID: UUID
+    let originalSurfaceID: UUID
     /// Frozen MRU ring, with the original surface at index zero.
-    public private(set) var ring: [UUID]
+    private(set) var ring: [UUID]
     /// Current selection within ``ring``.
-    public private(set) var index: Int
+    private(set) var index: Int
 
     /// Creates a cycle session when at least two distinct candidates exist.
     ///
@@ -20,7 +20,7 @@ public struct SurfaceCycleSession: Equatable, Sendable {
     ///   - currentSurfaceID: Surface focused when cycling begins.
     ///   - scope: Pane or workspace whose surfaces participate.
     ///   - requiredModifiers: Raw modifier mask that keeps the session active.
-    public init?(
+    init?(
         ring: [UUID],
         currentSurfaceID: UUID,
         scope: SurfaceCycleScope,
@@ -40,13 +40,13 @@ public struct SurfaceCycleSession: Equatable, Sendable {
     }
 
     /// Selected surface at the current ring position.
-    public var selectedSurfaceID: UUID { ring[index] }
+    var selectedSurfaceID: UUID { ring[index] }
 
     /// Advances with wraparound and returns the next selected surface.
     ///
     /// - Parameter direction: Direction to move through the frozen ring.
     /// - Returns: Newly selected surface identifier.
-    public mutating func advance(_ direction: SurfaceCycleDirection) -> UUID {
+    mutating func advance(_ direction: SurfaceCycleDirection) -> UUID {
         index = (index + direction.offset + ring.count) % ring.count
         return selectedSurfaceID
     }
@@ -55,7 +55,7 @@ public struct SurfaceCycleSession: Equatable, Sendable {
     ///
     /// - Parameter liveSurfaceIDs: Current surface identifiers in the scope.
     /// - Returns: The surviving selection, or `nil` when no candidates remain.
-    public mutating func reconcile(liveSurfaceIDs: Set<UUID>) -> UUID? {
+    mutating func reconcile(liveSurfaceIDs: Set<UUID>) -> UUID? {
         let selected = selectedSurfaceID
         ring.removeAll { !liveSurfaceIDs.contains($0) }
         guard !ring.isEmpty else { return nil }

@@ -86,13 +86,4 @@ public extension SurfaceCycleHosting {
         selectSurfaceForCycle(target, in: scope, isPreview: false)
     }
 
-    /// Cancels an active cycle and restores its initial surface.
-    func cancelSurfaceCycle() {
-        guard let scope = surfaceCycleModel.activeScope,
-              let target = surfaceCycleModel.cancel(),
-              surfaceCycleCandidates(in: scope).contains(target) else {
-            return
-        }
-        selectSurfaceForCycle(target, in: scope, isPreview: false)
-    }
 }
