@@ -11944,6 +11944,8 @@ extension Workspace: BonsplitDelegate {
         let activationIntent = focusIntent ?? activationPanel.preferredFocusIntentForActivation()
         activationPanel.prepareFocusIntentForActivation(activationIntent)
         let panelId = effectiveFocusedPanelId
+        let shouldApplyPanelFocus =
+            (panel as? TerminalPanel)?.isAgentHibernated != true || shouldResumeHibernatedAgent
         if let terminalPanel = panel as? TerminalPanel {
             if terminalPanel.isAgentHibernated, shouldResumeHibernatedAgent {
                 _ = resumeAgentHibernation(panelId: panelId, focus: false)
@@ -11983,7 +11985,8 @@ extension Workspace: BonsplitDelegate {
         activatePanel(
             activationPanel,
             focusIntent: activationIntent,
-            reassertAppKitFocus: reassertAppKitFocus,
+            reassertAppKitFocus: reassertAppKitFocus && shouldApplyPanelFocus,
+            activateHibernatedTerminal: shouldApplyPanelFocus,
             focusTransactionId: transactionId
         )
         let focusIntentAllowsBrowserOmnibarAutofocus =
@@ -12000,7 +12003,8 @@ extension Workspace: BonsplitDelegate {
 
         // Converge AppKit first responder with bonsplit's selected tab in the focused pane.
         // Without this, keyboard input can remain on a different terminal than the blue tab indicator.
-        if reassertAppKitFocus, let terminalPanel = activationPanel as? TerminalPanel {
+        if reassertAppKitFocus && shouldApplyPanelFocus,
+           let terminalPanel = activationPanel as? TerminalPanel {
             if shouldMoveTerminalSurfaceFocus(for: activationIntent) {
                 if !terminalPanel.hostedView.isSurfaceViewFirstResponder() {
 #if DEBUG
@@ -12032,7 +12036,7 @@ extension Workspace: BonsplitDelegate {
             }
         }
 
-        if shouldRestoreFocusIntentAfterActivation(activationIntent) {
+        if shouldApplyPanelFocus && shouldRestoreFocusIntentAfterActivation(activationIntent) {
             _ = activationPanel.restoreFocusIntent(activationIntent)
         }
 
@@ -12082,9 +12086,15 @@ extension Workspace: BonsplitDelegate {
         _ panel: any Panel,
         focusIntent: PanelFocusIntent,
         reassertAppKitFocus: Bool,
+        activateHibernatedTerminal: Bool = true,
         focusTransactionId: UUID? = nil
     ) {
         if let terminalPanel = panel as? TerminalPanel {
+            guard activateHibernatedTerminal else {
+                terminalPanel.surface.setFocus(false)
+                terminalPanel.hostedView.setActive(false)
+                return
+            }
             let shouldFocusTerminalSurface = shouldMoveTerminalSurfaceFocus(for: focusIntent)
             terminalPanel.surface.setFocus(shouldFocusTerminalSurface)
             terminalPanel.hostedView.setActive(true)
