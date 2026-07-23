@@ -342,18 +342,20 @@ final class KeyboardShortcutContextTests: XCTestCase {
         let d = UUID()
         let hostA = SurfaceCycleCoordinatorTestHost(candidates: [a, b], current: a)
         let hostB = SurfaceCycleCoordinatorTestHost(candidates: [c, d], current: c)
+        var focusedHost = "A"
+        hostA.onSelection = { focusedHost = "A" }
+        hostB.onSelection = { focusedHost = "B" }
         hostA.surfaceCycleModel.recordFocus(b)
         hostA.surfaceCycleModel.recordFocus(a)
         XCTAssertTrue(hostA.performSurfaceCycle(direction: .forward, requiredModifiers: 1))
 
         let appDelegate = AppDelegate()
         appDelegate.activeSurfaceCycleHost = hostA
+        focusedHost = "B"
         appDelegate.recordSurfaceCycleFocus(c, in: hostB)
 
-        XCTAssertEqual(hostA.selections, [
-            .init(surfaceID: b, isPreview: true),
-            .init(surfaceID: b, isPreview: false),
-        ])
+        XCTAssertEqual(hostA.selections, [.init(surfaceID: b, isPreview: true)])
+        XCTAssertEqual(focusedHost, "B")
         XCTAssertFalse(hostA.surfaceCycleModel.hasActiveSession)
         XCTAssertNil(appDelegate.activeSurfaceCycleHost)
         XCTAssertEqual(hostB.surfaceCycleModel.cycleOrder(candidates: [c, d]), [c, d])
@@ -809,6 +811,7 @@ private final class SurfaceCycleCoordinatorTestHost: SurfaceCycleHosting {
     var candidates: [UUID]
     var current: UUID
     var selections: [Selection] = []
+    var onSelection: (() -> Void)?
 
     init(candidates: [UUID], current: UUID) {
         self.candidates = candidates
@@ -825,6 +828,7 @@ private final class SurfaceCycleCoordinatorTestHost: SurfaceCycleHosting {
     func selectSurfaceForCycle(_ surfaceID: UUID, in scope: SurfaceCycleScope, isPreview: Bool) {
         current = surfaceID
         selections.append(.init(surfaceID: surfaceID, isPreview: isPreview))
+        onSelection?()
         surfaceCycleModel.recordFocus(surfaceID)
     }
 }

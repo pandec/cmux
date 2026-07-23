@@ -9574,6 +9574,7 @@ final class Workspace: Identifiable, ObservableObject {
                 panelId: panelId
             )
         }
+        surfaceCycleModel.forget(panelId)
         if shouldSkipControlMasterCleanupAfterDetach, let detachedTransfer = detached, detachedTransfer.isRemoteTerminal {
             skipControlMasterCleanupAfterDetachedRemoteTransfer = true
             if detachedTransfer.remoteCleanupConfiguration == nil {
