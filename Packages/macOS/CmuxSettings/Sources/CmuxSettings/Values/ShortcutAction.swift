@@ -42,6 +42,8 @@ public enum ShortcutAction: String, CaseIterable, Sendable, Hashable, SettingCod
     case triggerFlash
 
     // MARK: Navigation
+    case cycleSurfaceForward
+    case cycleSurfaceBackward
     case nextSurface
     case prevSurface
     /// Moves the selected surface one position left.
