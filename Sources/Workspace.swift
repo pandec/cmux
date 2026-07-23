@@ -8978,6 +8978,7 @@ final class Workspace: Identifiable, ObservableObject {
         }
 
         var detached = splitLayout.takeDetachedTransfer(tabId)
+        surfaceCycleModel.forget(panelId)
         if shouldSkipControlMasterCleanupAfterDetach, let detachedTransfer = detached, detachedTransfer.isRemoteTerminal {
             skipControlMasterCleanupAfterDetachedRemoteTransfer = true
             if detachedTransfer.remoteCleanupConfiguration == nil {

@@ -522,6 +522,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var cmuxThemePreviewReloadGeneration = 0
     private var cmuxThemePreviewReloadWorkItem: DispatchWorkItem?
     weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
+    var isApplyingSurfaceCycleSelection = false
 
     private static func detectRunningUnderXCTest(_ env: [String: String]) -> Bool {
         if env["XCTestConfigurationFilePath"] != nil { return true }
@@ -12420,9 +12421,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private func installShortcutMonitor() {
         // Local monitor only receives events when app is active (not global)
         shortcutMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.keyDown, .keyUp, .flagsChanged, .systemDefined]
+            matching: [
+                .keyDown, .keyUp, .flagsChanged, .systemDefined,
+                .leftMouseDown, .rightMouseDown, .otherMouseDown,
+            ]
         ) { [weak self] event in
             guard let self else { return event }
+            if event.type == .leftMouseDown || event.type == .rightMouseDown || event.type == .otherMouseDown {
+                self.interruptActiveSurfaceCycle()
+                return event
+            }
             if ShortcutRecorderEventRouter.dispatchActiveRecordingEvent(
                 event,
                 preferredWindow: event.window ?? shortcutRoutingActiveWindow
@@ -16755,6 +16763,7 @@ private extension NSWindow {
             result = cmux_makeFirstResponder(responder)
         }
         if result {
+            AppDelegate.shared?.interruptSurfaceCycleAfterExternalResponderChange()
             AppDelegate.shared?.postBrowserInspectorClickIntentIfNeeded(for: responder, in: self, event: currentEvent)
             if let fieldEditor = responder as? NSTextView, fieldEditor.isFieldEditor {
                 Self.cmuxTrackFieldEditor(fieldEditor, owningWebView: responderWebView)
