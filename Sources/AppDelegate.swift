@@ -522,7 +522,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
     private var cmuxThemePreviewReloadGeneration = 0
     private var cmuxThemePreviewReloadWorkItem: DispatchWorkItem?
     weak var activeSurfaceCycleHost: (any SurfaceCycleHosting)?
-    var isApplyingSurfaceCycleSelection = false
 
     private static func detectRunningUnderXCTest(_ env: [String: String]) -> Bool {
         if env["XCTestConfigurationFilePath"] != nil { return true }
@@ -16763,7 +16762,6 @@ private extension NSWindow {
             result = cmux_makeFirstResponder(responder)
         }
         if result {
-            AppDelegate.shared?.interruptSurfaceCycleAfterExternalResponderChange()
             AppDelegate.shared?.postBrowserInspectorClickIntentIfNeeded(for: responder, in: self, event: currentEvent)
             if let fieldEditor = responder as? NSTextView, fieldEditor.isFieldEditor {
                 Self.cmuxTrackFieldEditor(fieldEditor, owningWebView: responderWebView)

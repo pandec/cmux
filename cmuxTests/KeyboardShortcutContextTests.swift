@@ -319,7 +319,7 @@ final class KeyboardShortcutContextTests: XCTestCase {
     }
 
     @MainActor
-    func testFocusInAnotherHostCommitsOnlyTheActiveSurfaceCycle() {
+    func testFocusInAnotherHostInterruptsOnlyTheActiveSurfaceCycle() {
         let a = UUID()
         let b = UUID()
         let c = UUID()
@@ -343,6 +343,16 @@ final class KeyboardShortcutContextTests: XCTestCase {
         XCTAssertFalse(hostA.surfaceCycleModel.hasActiveSession)
         XCTAssertNil(appDelegate.activeSurfaceCycleHost)
         XCTAssertEqual(hostB.surfaceCycleModel.cycleOrder(candidates: [c, d]), [c, d])
+    }
+
+    @MainActor
+    func testWindowResignInterruptsOnlyWhileApplicationRemainsActive() {
+        XCTAssertTrue(
+            AppDelegate.shouldInterruptSurfaceCycleOnWindowResign(isApplicationActive: true)
+        )
+        XCTAssertFalse(
+            AppDelegate.shouldInterruptSurfaceCycleOnWindowResign(isApplicationActive: false)
+        )
     }
 
     // Regression: on European layouts (German QWERTZ, French AZERTY, Nordic, ...)

@@ -160,6 +160,7 @@ extension DockSplitStore {
             installSubscription(for: panel, tracksTerminalTitle: true)
             return nil
         }
+        surfaceCycleModel.forget(panelId)
 
         return Workspace.DetachedSurfaceTransfer(
             sourceWorkspaceId: workspaceId,
