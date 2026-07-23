@@ -323,6 +323,11 @@ extension DockSplitStore {
             panelId: selectedPanel.id,
             preservingForwardBranch: false
         )
+        if let appDelegate = AppDelegate.shared {
+            appDelegate.recordSurfaceCycleFocus(selectedPanel.id, in: self)
+        } else {
+            surfaceCycleModel.recordFocus(selectedPanel.id)
+        }
         let activationIntent = focusIntent ?? selectedPanel.preferredFocusIntentForActivation()
         selectedPanel.prepareFocusIntentForActivation(activationIntent)
         forEachPanel { panelId, panel in

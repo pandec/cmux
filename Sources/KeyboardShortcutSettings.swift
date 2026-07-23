@@ -121,6 +121,8 @@ enum KeyboardShortcutSettings {
         case triggerFlash
 
         // Navigation
+        case cycleSurfaceForward
+        case cycleSurfaceBackward
         case nextSurface
         case prevSurface
         case moveSurfaceLeft, moveSurfaceRight
@@ -277,6 +279,8 @@ enum KeyboardShortcutSettings {
             case .switchRightSidebarToDock: return String(localized: "shortcut.switchRightSidebarToDock.label", defaultValue: "Show Sidebar Dock")
             case .switchRightSidebarToMachines: return String(localized: "shortcut.switchRightSidebarToMachines.label", defaultValue: "Show Sidebar Cloud")
             case .triggerFlash: return String(localized: "shortcut.flashFocusedPanel.label", defaultValue: "Flash Focused Panel")
+            case .cycleSurfaceForward: return String(localized: "shortcut.cycleSurfaceForward.label", defaultValue: "Cycle Surfaces Forward")
+            case .cycleSurfaceBackward: return String(localized: "shortcut.cycleSurfaceBackward.label", defaultValue: "Cycle Surfaces Backward")
             case .nextSurface: return String(localized: "shortcut.nextSurface.label", defaultValue: "Next Surface")
             case .prevSurface: return String(localized: "shortcut.previousSurface.label", defaultValue: "Previous Surface")
             case .moveSurfaceLeft: return String(localized: "shortcut.moveSurfaceLeft.label", defaultValue: "Reorder Surface Left")
@@ -490,6 +494,10 @@ enum KeyboardShortcutSettings {
                 return KeyboardShortcutSettings.rightSidebarPositionalDefaultShortcut(for: .machines)
             case .triggerFlash:
                 return StoredShortcut(key: "h", command: true, shift: true, option: false, control: false)
+            case .cycleSurfaceForward:
+                return StoredShortcut(key: "\t", command: false, shift: false, option: false, control: true)
+            case .cycleSurfaceBackward:
+                return StoredShortcut(key: "\t", command: false, shift: true, option: false, control: true)
             case .nextSidebarTab:
                 return StoredShortcut(key: "]", command: true, shift: false, option: false, control: true)
             case .prevSidebarTab:
