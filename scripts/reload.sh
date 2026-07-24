@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/mobile-attach.sh"
 # shellcheck source=scripts/lib/dev-secrets.sh
 source "$SCRIPT_DIR/lib/dev-secrets.sh"
+# shellcheck source=scripts/lib/reload-auth.sh
+source "$SCRIPT_DIR/lib/reload-auth.sh"
 
 APP_NAME="cmux DEV"
 BUNDLE_ID="com.cmuxterm.app.debug"
@@ -25,6 +27,7 @@ CMUX_DEV_API_BASE_URL_VALUE=""
 CMUX_IROH_BROKER_BASE_URL_VALUE=""
 CMUX_AUTH_WWW_ORIGIN_VALUE=""
 CMUX_WWW_ORIGIN_VALUE=""
+AUTH_MODE=""
 PROD_AUTH=0
 AUTH_CREDENTIALS_FILE=""
 CLI_PATH=""
@@ -267,6 +270,9 @@ Options:
                          builds and prints the app path but does not open it.
   --prod-auth            Point this tagged Debug build at production Stack auth,
                          cmux APIs, and the production Iroh broker.
+                         This is the default for dev-bdec and dev-bdecN tags.
+  --dev-auth             Force development auth and local web APIs, including
+                         for dev-bdec and dev-bdecN tags.
   --credentials-file <path>
                          Bake only the path to a current-user-owned 0600 auth file.
                          The credential values never enter argv, Info.plist, or
@@ -505,7 +511,15 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --prod-auth)
-      PROD_AUTH=1
+      if ! AUTH_MODE="$(cmux_reload_select_auth_mode "$AUTH_MODE" production)"; then
+        exit 2
+      fi
+      shift
+      ;;
+    --dev-auth)
+      if ! AUTH_MODE="$(cmux_reload_select_auth_mode "$AUTH_MODE" development)"; then
+        exit 2
+      fi
       shift
       ;;
     --credentials-file)
@@ -553,6 +567,11 @@ if [[ -z "$TAG" ]]; then
   echo "error: --tag is required (example: ./scripts/reload.sh --tag fix-sidebar-theme)" >&2
   usage
   exit 1
+fi
+
+AUTH_MODE="$(cmux_reload_resolve_auth_mode "$TAG" "$AUTH_MODE")"
+if [[ "$AUTH_MODE" == "production" ]]; then
+  PROD_AUTH=1
 fi
 
 if [[ -n "$AUTH_CREDENTIALS_FILE" ]]; then
@@ -649,15 +668,15 @@ reload_finalize() {
     echo "App path:"
     echo "  $APP_PATH"
   fi
-  if [[ -n "${CMUX_DEV_ORIGIN:-}" ]]; then
+  if [[ -n "${CMUX_WWW_ORIGIN_VALUE:-}" ]]; then
     echo
-    echo "Dev web origin:"
-    echo "  $CMUX_DEV_ORIGIN"
-    echo "Dev API origin:"
+    echo "App web origin:"
+    echo "  $CMUX_WWW_ORIGIN_VALUE"
+    echo "App API origin:"
     echo "  $CMUX_DEV_API_BASE_URL_VALUE"
     echo "Iroh broker origin:"
     echo "  $CMUX_IROH_BROKER_BASE_URL_VALUE"
-    if [[ -n "${TAG_SLUG:-}" ]]; then
+    if [[ "$PROD_AUTH" -ne 1 && -n "${TAG_SLUG:-}" ]]; then
       echo "Dev web command:"
       echo "  cd web && CMUX_PORT=$CMUX_DEV_PORT CMUX_PORT_RANGE=$CMUX_DEV_PORT_RANGE CMUX_PORT_END=$CMUX_DEV_PORT_END CMUX_AUTH_CALLBACK_SCHEME=cmux-dev-$TAG_SLUG bun dev"
     fi

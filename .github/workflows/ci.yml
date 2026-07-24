@@ -98,6 +98,9 @@ jobs:
       - name: Validate docs deployment authentication guard
         run: python3 tests/test_docs_deploy_auth_guard.py
 
+      - name: Validate personal reload authentication defaults
+        run: bash tests/test_reload_auth_defaults.sh
+
       - name: Validate Python test harness syntax
         run: git ls-files 'tests/*.py' 'tests_v2/*.py' 'scripts/*.py' | xargs python3 -m py_compile
 
