@@ -1184,6 +1184,9 @@ jobs:
       - name: Check agent hook docs against the catalog
         run: python3 scripts/check-agent-hook-docs.py
 
+      - name: Validate personal reload authentication defaults
+        run: bash tests/test_reload_auth_defaults.sh
+
   guards:
     # Not after static-preflight: the guards are the last job
     # macos-admission-gate waits for (median ~110 s after changes), and the
