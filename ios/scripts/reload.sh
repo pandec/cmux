@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IOS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=../../scripts/lib/reload-auth.sh
+source "$IOS_DIR/../scripts/lib/reload-auth.sh"
+
 usage() {
   cat <<'EOF'
 Usage: ios/scripts/reload.sh --tag <tag> [--simulator <name>] [--simulator-id <id>] [--no-launch]
@@ -38,7 +43,9 @@ the tagged Mac app. Opt out granularly:
                  worker and API base follow the channel in-app). Implies
                  --no-sign-in (dogfood auto-login creds are dev-channel);
                  sign in in-app with your real account and use the IN-APP
-                 scanner.
+                 scanner. This is the default for dev-bdec and dev-bdecN tags.
+  --dev-auth     force development auth and local/staging APIs, including for
+                 dev-bdec and dev-bdecN tags.
 
 Device signing uses the local Xcode account, or App Store Connect API
 credentials from ASC_API_KEY_ID, ASC_API_ISSUER_ID, ASC_API_KEY_PATH, or
@@ -95,8 +102,9 @@ SIMULATOR_LAUNCH=1
 # "undefined symbol: _abort/_free/..." link failures. Mirrors scripts/reload.sh.
 # Also honored via CMUX_SWIFT_FRONTEND_WORKAROUND=1.
 SWIFT_FRONTEND_WORKAROUND="${CMUX_SWIFT_FRONTEND_WORKAROUND:-0}"
-# --prod-auth: bake CMUXAuthEnvironment=production so the dev build signs in
-# against the production Stack project.
+# Production auth bakes CMUXAuthEnvironment=production so the dev build signs
+# in against the production Stack project.
+AUTH_MODE=""
 PROD_AUTH=0
 
 while [[ $# -gt 0 ]]; do
@@ -177,7 +185,15 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --prod-auth)
-      PROD_AUTH=1
+      if ! AUTH_MODE="$(cmux_reload_select_auth_mode "$AUTH_MODE" production)"; then
+        exit 2
+      fi
+      shift
+      ;;
+    --dev-auth)
+      if ! AUTH_MODE="$(cmux_reload_select_auth_mode "$AUTH_MODE" development)"; then
+        exit 2
+      fi
       shift
       ;;
     -h|--help)
@@ -206,6 +222,11 @@ if [[ "$SIMULATOR_ONLY" -eq 1 ]]; then
     usage >&2
     exit 1
   fi
+fi
+
+AUTH_MODE="$(cmux_reload_resolve_auth_mode "$TAG" "$AUTH_MODE")"
+if [[ "$AUTH_MODE" == "production" ]]; then
+  PROD_AUTH=1
 fi
 
 if [[ "$RELOAD_SIMULATOR" -eq 0 && "$RELOAD_DEVICE" -eq 0 ]]; then
@@ -243,7 +264,7 @@ if [[ -n "${CMUX_XCODEBUILD_JOBS:-}" ]]; then
   XCODEBUILD_PARALLEL_ARGS=(-jobs "$CMUX_XCODEBUILD_JOBS")
 fi
 
-# --prod-auth: point the build at the production auth channel for production
+# Production-auth mode points the build at the production channel for real
 # account, registry, and API testing (https://github.com/manaflow-ai/cmux/issues/7145).
 # The value lands in the CMUXAuthEnvironment Info.plist key (a tapped device
 # build sees no shell env), read by MobileAuthComposition. Presence needs no
