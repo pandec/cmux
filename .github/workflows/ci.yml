@@ -1110,6 +1110,9 @@ jobs:
       - name: Run the contributor static preflight
         run: python3 scripts/verify-local.py
 
+      - name: Validate personal reload authentication defaults
+        run: bash tests/test_reload_auth_defaults.sh
+
   guards:
     # Not after static-preflight: the guards are the last job
     # macos-admission-gate waits for (median ~110 s after changes), and the
