@@ -113,6 +113,11 @@ CMUX_SKIP_ZIG_BUILD=1 PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" \
 open -n "$HOME/Library/Developer/Xcode/DerivedData/cmux-dev-bdecN/Build/Products/Debug/cmux DEV dev-bdecN.app"
 ```
 
+The `dev-bdec` tag and numbered `dev-bdecN` candidates default to production
+Stack auth and cmux APIs so Bartosz's real account works without a local web
+server. Pass `--dev-auth` only when intentionally developing against the local
+web/auth stack. The iOS reload script uses the same tag-scoped default.
+
 After the user approves the candidate:
 
 1. Back up the real `dev-bdec` plist and session JSON beside the originals with a timestamp; verify byte-identical checksums.
