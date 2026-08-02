@@ -57,6 +57,7 @@ extension ShortcutAction {
             && self != .globalSearch
         guard allowsBareFirstStroke
             || first.hasAnyModifier
+            || first.isModifierlessNavigationKey
             || supportsLegacyBareSpace else {
             return .bareFirstStrokeNotAllowed
         }
