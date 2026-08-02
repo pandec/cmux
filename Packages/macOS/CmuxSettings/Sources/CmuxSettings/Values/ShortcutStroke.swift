@@ -35,6 +35,19 @@ public struct ShortcutStroke: Sendable, Equatable, Hashable, Codable {
     /// True when at least one of `cmd`, `shift`, `opt`, or `ctrl` is set.
     public var hasAnyModifier: Bool { command || shift || option || control }
 
+    /// Whether this non-text navigation key can be bound without a modifier.
+    ///
+    /// macOS reports Globe/Fn plus an arrow key as Home, End, Page Up, or
+    /// Page Down with the Function flag stripped before shortcut matching.
+    /// These keys do not produce text, so they are safe to bind without also
+    /// allowing bare letters, arrows, Return, or other terminal input.
+    public var isModifierlessNavigationKey: Bool {
+        switch key {
+        case "↖", "↘", "⇞", "⇟": true
+        default: false
+        }
+    }
+
     /// Returns this stroke with its key normalized to cmux's persisted
     /// physical-key representation when a recording-time key code is present.
     public func canonicalized() -> ShortcutStroke {
