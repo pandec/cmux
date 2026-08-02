@@ -82,6 +82,19 @@ import CmuxSettings
         #expect(model.bareKeyRejections.contains(action.rawValue))
     }
 
+    @Test func assignAcceptsModifierlessNavigationKey() async throws {
+        let (store, catalog, errorLog) = makeStore()
+        let action = ShortcutAction.focusLeft
+        let shortcut = StoredShortcut(first: ShortcutStroke(key: "↖", keyCode: 115))
+        let model = ShortcutListModel(jsonStore: store, catalog: catalog, errorLog: errorLog)
+
+        await model.assign(stroke: shortcut.first, to: action)
+
+        let storeBindings = await store.value(for: catalog.shortcuts.bindings)
+        #expect(storeBindings[action.rawValue] == shortcut)
+        #expect(!model.bareKeyRejections.contains(action.rawValue))
+    }
+
     @Test func clearThenRestoreRoundTrips() async throws {
         // WHY: clearOrRestore must snapshot the effective binding before clearing;
         // a second call on the same now-unbound action must restore exactly that snapshot.
