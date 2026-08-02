@@ -1796,7 +1796,7 @@ struct ShortcutStroke: Equatable, Hashable {
     }
 
     fileprivate var isBareShortcutAllowedWithoutModifier: Bool {
-        Self.usesDirectKeyCodeMatching(key) || Self.isHomeEndPageKey(key)
+        Self.usesDirectKeyCodeMatching(key) || cmuxSettingsShortcutStroke.isModifierlessNavigationKey
     }
 
     private static func recordableKey(from event: NSEvent) -> RecordableKey? {
@@ -2061,11 +2061,6 @@ struct ShortcutStroke: Equatable, Hashable {
             return usesDirectKeyCodeMatching(key)
         }
     }
-
-    private static func isHomeEndPageKey(_ key: String) -> Bool {
-        key == "↖" || key == "↘" || key == "⇞" || key == "⇟"
-    }
-
     private static func functionKeyDisplayString(for key: String) -> String? {
         guard key.hasPrefix("f"),
               let number = Int(key.dropFirst()),
