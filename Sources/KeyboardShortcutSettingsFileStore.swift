@@ -1051,9 +1051,12 @@ final class CmuxSettingsFileStore {
             return .unbound
         }
         // Mirror StoredShortcut.parseConfig(strokes:allowBareFirstStroke:): a
-        // bare first stroke is only valid for actions that opt into it, or for
-        // the space key.
-        guard action.allowsBareFirstStroke || !first.modifierFlags.isEmpty || first.key == "space" else {
+        // Bare first strokes are limited to actions that opt into them, legacy
+        // Space bindings, and non-text navigation keys produced by Globe/Fn.
+        guard action.allowsBareFirstStroke
+            || !first.modifierFlags.isEmpty
+            || first.cmuxSettingsShortcutStroke.isModifierlessNavigationKey
+            || first.key == "space" else {
             return nil
         }
         let second: ShortcutStroke?

@@ -1753,7 +1753,7 @@ struct ShortcutStroke: Equatable, Hashable {
     }
 
     fileprivate var isBareShortcutAllowedWithoutModifier: Bool {
-        Self.usesDirectKeyCodeMatching(key) || Self.isHomeEndPageKey(key)
+        Self.usesDirectKeyCodeMatching(key) || cmuxSettingsShortcutStroke.isModifierlessNavigationKey
     }
 
     private static func recordableKey(from event: NSEvent) -> RecordableKey? {
@@ -2005,10 +2005,6 @@ struct ShortcutStroke: Equatable, Hashable {
 
     private static func usesDirectKeyCodeMatching(_ key: String) -> Bool {
         key == "\t" || key == "space" || functionKeyDisplayString(for: key) != nil || key.hasPrefix("media.")
-    }
-
-    private static func isHomeEndPageKey(_ key: String) -> Bool {
-        key == "↖" || key == "↘" || key == "⇞" || key == "⇟"
     }
 
     private static func functionKeyDisplayString(for key: String) -> String? {

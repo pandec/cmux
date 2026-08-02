@@ -34,6 +34,7 @@ extension StoredShortcut {
         }
         guard allowBareFirstStroke
             || firstStroke.hasAnyModifier
+            || firstStroke.isModifierlessNavigationKey
             || firstStroke.key == "space" else {
             return nil
         }
@@ -117,6 +118,14 @@ private extension ShortcutStroke {
             return "↑"
         case "down", "arrowdown", "downarrow", "↓":
             return "↓"
+        case "home", "↖":
+            return "↖"
+        case "end", "↘":
+            return "↘"
+        case "pageup", "page_up", "⇞":
+            return "⇞"
+        case "pagedown", "page_down", "⇟":
+            return "⇟"
         case "tab":
             return "\t"
         case "return", "enter", "↩":

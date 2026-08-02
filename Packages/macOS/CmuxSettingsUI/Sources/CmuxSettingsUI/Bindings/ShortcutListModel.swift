@@ -272,6 +272,7 @@ final class ShortcutListModel {
             ) == .accepted
         guard action.allowsBareFirstStroke
             || stroke.hasAnyModifier
+            || stroke.isModifierlessNavigationKey
             || restoresSupportedLegacyBareSpace else {
             markBareKeyRejected(action)
             return
@@ -338,7 +339,9 @@ final class ShortcutListModel {
             chordModeActions.remove(action.rawValue)
             return
         }
-        guard action.allowsBareFirstStroke || chord.first.hasAnyModifier else {
+        guard action.allowsBareFirstStroke
+            || chord.first.hasAnyModifier
+            || chord.first.isModifierlessNavigationKey else {
             markBareKeyRejected(action)
             chordModeActions.remove(action.rawValue)
             return
