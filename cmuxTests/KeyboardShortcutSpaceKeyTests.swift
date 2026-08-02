@@ -100,4 +100,38 @@ import Testing
             StoredShortcut(key: "space", command: true, shift: true, option: false, control: false)
         )
     }
+
+    @MainActor
+    @Test func settingsFileNavigationShortcutDoesNotFallBackToDefault() throws {
+        let originalSettingsFileStore = KeyboardShortcutSettings.settingsFileStore
+        let directoryURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        defer {
+            KeyboardShortcutSettings.settingsFileStore = originalSettingsFileStore
+            try? FileManager.default.removeItem(at: directoryURL)
+        }
+
+        try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        let settingsFileURL = directoryURL.appendingPathComponent("cmux.json", isDirectory: false)
+        try """
+        {
+          "shortcuts": {
+            "bindings": {
+              "focusLeft": "home"
+            }
+          }
+        }
+        """.write(to: settingsFileURL, atomically: true, encoding: .utf8)
+
+        KeyboardShortcutSettings.settingsFileStore = KeyboardShortcutSettingsFileStore(
+            primaryPath: settingsFileURL.path,
+            fallbackPath: nil,
+            startWatching: false
+        )
+
+        #expect(
+            KeyboardShortcutSettings.shortcut(for: .focusLeft) ==
+            StoredShortcut(key: "↖", command: false, shift: false, option: false, control: false)
+        )
+    }
 }
