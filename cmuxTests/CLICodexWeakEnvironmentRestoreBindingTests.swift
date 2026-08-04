@@ -255,7 +255,10 @@ extension CLINotifyProcessIntegrationRegressionTests {
         }
         let resume = try XCTUnwrap(resumeRequests.last, "expected durable mapped resume binding, saw \(commands)")
         XCTAssertEqual(resume["checkpoint_id"] as? String, sessionId)
-        XCTAssertEqual(resume["cwd"] as? String, repo.path)
+        XCTAssertEqual(
+            resume["cwd"] as? String,
+            expectedCanonicalCustomPath == nil ? repo.path : worktree.path
+        )
         XCTAssertTrue((resume["command"] as? String)?.contains("codex") == true)
         XCTAssertTrue(
             (resume["command"] as? String)?.contains(expectedFlag) == true,
