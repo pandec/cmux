@@ -15,7 +15,9 @@ Always build with a tag. **Never run bare `xcodebuild` or `open` an untagged `cm
 
 A tag gives the app its own name, bundle ID, socket, and derived data path, so it runs side-by-side with the user's main app. Report the build to the user as a markdown link to `http://127.0.0.1:17320/<tag>`. Never put a `file://` URL, a raw `.app` path, or `/tmp/cmux-<tag>/...` in chat output.
 
-Other variants: `reloadp.sh` (Release), `reloads.sh` (Release as isolated "cmux STAGING"), `reload2.sh --tag <tag>` (both).
+Other variants: `reloadp.sh` (Release), `reloads.sh` (Release as isolated "cmux STAGING"), `reload2.sh --tag <tag>` (both), `reloadn.sh` (Release on the nightly channel).
+
+`reloadn.sh` is the local counterpart of the identity injection in `.github/workflows/nightly.yml`: it builds Release with `AppIcon-Nightly`, stamps the nightly identity ("cmux NIGHTLY", `com.cmuxterm.app.nightly`, `cmux-nightly` URL scheme, nightly appcast with automatic checks off), ad-hoc signs with the compatible local runtime/TCC entitlements, verifies the staged and installed bundles, and performs a rollback-safe install to `~/Applications/cmux NIGHTLY.app` so the build survives reboots and `/tmp` cleanup. Derived data still lives in `/tmp`. Team-scoped Keychain and WebAuthn entitlements, Developer ID signing, and notarization stay in CI. Use `--no-install --no-launch` to validate a build without stopping the running Nightly. A normal install requests a graceful quit and waits for the user to confirm cmux's close dialog; it never force-kills the app.
 
 Compile-only check, no launch:
 
