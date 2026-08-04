@@ -95,6 +95,17 @@ extension CLINotifyProcessIntegrationRegressionTests {
         )
     }
 
+    func testCodexCustomLauncherCapturePreservesPathAndCanonicalizesExecutable() throws {
+        let customCodexPath = "/Users/example/.local/libexec/cliproxy/codex"
+        try assertCodexWeakCapturePreservesFlags(
+            currentArguments: [customCodexPath, "--yolo"],
+            mappedArguments: ["/usr/local/bin/codex", "--model", "gpt-5.4"],
+            expectedFlag: "--yolo",
+            unexpectedFlag: "--model",
+            expectedCanonicalCustomPath: customCodexPath
+        )
+    }
+
     func testCodexWeakMappedCaptureWithoutDurableTargetDoesNotPublishResumeBinding() throws {
         try assertCodexWeakCapturePreservesFlags(
             currentArguments: nil,
@@ -109,7 +120,8 @@ extension CLINotifyProcessIntegrationRegressionTests {
         mappedArguments: [String],
         expectedFlag: String?,
         unexpectedFlag: String? = nil,
-        transcriptBacked: Bool = true
+        transcriptBacked: Bool = true,
+        expectedCanonicalCustomPath: String? = nil
     ) throws {
         let cliPath = try bundledCLIPath()
         let socketPath = makeSocketPath("codex-weak-env-preserve")
@@ -193,9 +205,15 @@ extension CLINotifyProcessIntegrationRegressionTests {
         environment["ANTHROPIC_BASE_URL"] = "http://subrouter-team:31415"
         environment["CLAUDE_CONFIG_DIR"] = root.appendingPathComponent(".codex-accounts/claude/work", isDirectory: true).path
         environment.removeValue(forKey: "CODEX_HOME")
+        environment["CLIPROXYAPI_API_KEY"] = "secret-should-not-persist"
+        if let expectedCanonicalCustomPath {
+            environment["CMUX_CUSTOM_CODEX_PATH"] = expectedCanonicalCustomPath
+        } else {
+            environment.removeValue(forKey: "CMUX_CUSTOM_CODEX_PATH")
+        }
         if let currentArguments {
             environment["CMUX_AGENT_LAUNCH_KIND"] = "codex"
-            environment["CMUX_AGENT_LAUNCH_EXECUTABLE"] = "/usr/local/bin/codex"
+            environment["CMUX_AGENT_LAUNCH_EXECUTABLE"] = currentArguments[0]
             environment["CMUX_AGENT_LAUNCH_ARGV_B64"] = base64NULSeparated(currentArguments)
             environment["CMUX_AGENT_LAUNCH_CWD"] = worktree.path
         } else {
@@ -248,6 +266,18 @@ extension CLINotifyProcessIntegrationRegressionTests {
                 (resume["command"] as? String)?.contains(unexpectedFlag) == true,
                 "the sanitized current capture must win over weaker mapped flags: \(resume)"
             )
+        }
+        if let expectedCanonicalCustomPath {
+            let launchCommand = try XCTUnwrap(resume["launch_command"] as? [String: Any])
+            XCTAssertNil(
+                launchCommand["executable_path"],
+                "the durable record must use the logical Codex executable so restore and fork route through the wrapper"
+            )
+            XCTAssertEqual(launchCommand["arguments"] as? [String], ["codex", "--yolo"])
+            XCTAssertEqual(launchCommand["working_directory"] as? String, worktree.path)
+            let launchEnvironment = try XCTUnwrap(launchCommand["environment"] as? [String: String])
+            XCTAssertEqual(launchEnvironment["CMUX_CUSTOM_CODEX_PATH"], expectedCanonicalCustomPath)
+            XCTAssertNil(launchEnvironment["CLIPROXYAPI_API_KEY"])
         }
     }
 

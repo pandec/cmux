@@ -87,4 +87,19 @@ struct AgentLaunchEnvironmentPolicyTests {
         )
         #expect(selectedOmp["PI_PACKAGE_DIR"] == "/nix/store/pi-package")
     }
+
+    @Test("Preserves custom Codex executable without persisting its API key")
+    func preservesCustomCodexExecutableWithoutPersistingAPIKey() {
+        let selected = AgentLaunchEnvironmentPolicy().selectedEnvironment(
+            from: [
+                "CMUX_CUSTOM_CODEX_PATH": "/Users/example/.local/libexec/cliproxy/codex",
+                "CLIPROXYAPI_API_KEY": "secret-should-not-persist",
+            ],
+            kind: "codex"
+        )
+
+        #expect(selected == [
+            "CMUX_CUSTOM_CODEX_PATH": "/Users/example/.local/libexec/cliproxy/codex",
+        ])
+    }
 }
