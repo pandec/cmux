@@ -102,7 +102,22 @@ extension CLINotifyProcessIntegrationRegressionTests {
             mappedArguments: ["/usr/local/bin/codex", "--model", "gpt-5.4"],
             expectedFlag: "--yolo",
             unexpectedFlag: "--model",
+            customCodexPath: customCodexPath,
             expectedCanonicalCustomPath: customCodexPath
+        )
+    }
+
+    func testCodexUnrelatedCustomPathDoesNotReplaceCapturedExecutable() throws {
+        let capturedCodexPath = "/opt/beta/codex"
+        try assertCodexWeakCapturePreservesFlags(
+            currentArguments: [capturedCodexPath, "--yolo"],
+            mappedArguments: ["/usr/local/bin/codex", "--model", "gpt-5.4"],
+            expectedFlag: "--yolo",
+            unexpectedFlag: "--model",
+            customCodexPath: "/Users/example/.local/libexec/cliproxy/codex",
+            includeWeakClaudeEnvironment: false,
+            expectedCapturedExecutablePath: capturedCodexPath,
+            expectsCurrentWorkingDirectory: true
         )
     }
 
@@ -121,7 +136,11 @@ extension CLINotifyProcessIntegrationRegressionTests {
         expectedFlag: String?,
         unexpectedFlag: String? = nil,
         transcriptBacked: Bool = true,
-        expectedCanonicalCustomPath: String? = nil
+        customCodexPath: String? = nil,
+        includeWeakClaudeEnvironment: Bool = true,
+        expectedCanonicalCustomPath: String? = nil,
+        expectedCapturedExecutablePath: String? = nil,
+        expectsCurrentWorkingDirectory: Bool = false
     ) throws {
         let cliPath = try bundledCLIPath()
         let socketPath = makeSocketPath("codex-weak-env-preserve")
@@ -202,12 +221,17 @@ extension CLINotifyProcessIntegrationRegressionTests {
         environment["CMUX_CLI_TTY_NAME"] = ttyName
         environment["CMUX_AGENT_HOOK_STATE_DIR"] = root.path
         environment["CMUX_CLI_SENTRY_DISABLED"] = "1"
-        environment["ANTHROPIC_BASE_URL"] = "http://subrouter-team:31415"
-        environment["CLAUDE_CONFIG_DIR"] = root.appendingPathComponent(".codex-accounts/claude/work", isDirectory: true).path
+        if includeWeakClaudeEnvironment {
+            environment["ANTHROPIC_BASE_URL"] = "http://subrouter-team:31415"
+            environment["CLAUDE_CONFIG_DIR"] = root.appendingPathComponent(".codex-accounts/claude/work", isDirectory: true).path
+        } else {
+            environment.removeValue(forKey: "ANTHROPIC_BASE_URL")
+            environment.removeValue(forKey: "CLAUDE_CONFIG_DIR")
+        }
         environment.removeValue(forKey: "CODEX_HOME")
         environment["CLIPROXYAPI_API_KEY"] = "secret-should-not-persist"
-        if let expectedCanonicalCustomPath {
-            environment["CMUX_CUSTOM_CODEX_PATH"] = expectedCanonicalCustomPath
+        if let customCodexPath {
+            environment["CMUX_CUSTOM_CODEX_PATH"] = customCodexPath
         } else {
             environment.removeValue(forKey: "CMUX_CUSTOM_CODEX_PATH")
         }
@@ -257,7 +281,7 @@ extension CLINotifyProcessIntegrationRegressionTests {
         XCTAssertEqual(resume["checkpoint_id"] as? String, sessionId)
         XCTAssertEqual(
             resume["cwd"] as? String,
-            expectedCanonicalCustomPath == nil ? repo.path : worktree.path
+            expectsCurrentWorkingDirectory ? worktree.path : repo.path
         )
         XCTAssertTrue((resume["command"] as? String)?.contains("codex") == true)
         XCTAssertTrue(
@@ -277,10 +301,31 @@ extension CLINotifyProcessIntegrationRegressionTests {
                 "the durable record must use the logical Codex executable so restore and fork route through the wrapper"
             )
             XCTAssertEqual(launchCommand["arguments"] as? [String], ["codex", "--yolo"])
-            XCTAssertEqual(launchCommand["working_directory"] as? String, worktree.path)
+            XCTAssertNil(launchCommand["working_directory"])
             let launchEnvironment = try XCTUnwrap(launchCommand["environment"] as? [String: String])
             XCTAssertEqual(launchEnvironment["CMUX_CUSTOM_CODEX_PATH"], expectedCanonicalCustomPath)
+            XCTAssertNil(launchEnvironment["ANTHROPIC_BASE_URL"])
+            XCTAssertNil(launchEnvironment["CLAUDE_CONFIG_DIR"])
             XCTAssertNil(launchEnvironment["CLIPROXYAPI_API_KEY"])
+
+            let storeJSON = try XCTUnwrap(JSONSerialization.jsonObject(
+                with: Data(contentsOf: root.appendingPathComponent("codex-hook-sessions.json"))
+            ) as? [String: Any])
+            let sessions = try XCTUnwrap(storeJSON["sessions"] as? [String: Any])
+            let persisted = try XCTUnwrap(sessions[sessionId] as? [String: Any])
+            let persistedLaunchCommand = try XCTUnwrap(persisted["launchCommand"] as? [String: Any])
+            XCTAssertNil(persistedLaunchCommand["executablePath"])
+            XCTAssertEqual(persistedLaunchCommand["arguments"] as? [String], ["codex", "--yolo"])
+            XCTAssertNil(persistedLaunchCommand["workingDirectory"])
+            let persistedEnvironment = try XCTUnwrap(persistedLaunchCommand["environment"] as? [String: String])
+            XCTAssertEqual(persistedEnvironment["CMUX_CUSTOM_CODEX_PATH"], expectedCanonicalCustomPath)
+            XCTAssertNil(persistedEnvironment["CLIPROXYAPI_API_KEY"])
+        }
+        if let expectedCapturedExecutablePath {
+            let launchCommand = try XCTUnwrap(resume["launch_command"] as? [String: Any])
+            XCTAssertEqual(launchCommand["executable_path"] as? String, expectedCapturedExecutablePath)
+            XCTAssertEqual((launchCommand["arguments"] as? [String])?.first, expectedCapturedExecutablePath)
+            XCTAssertEqual(launchCommand["working_directory"] as? String, worktree.path)
         }
     }
 
