@@ -50,6 +50,18 @@ Python tests in `tests/test-execution.toml`. Preserve it and
 run `python3 scripts/verify-local.py --only project` after project edits. Toolchain
 pin changes are deliberate team decisions; see [project normalization](references/xcode-project-normalization.md).
 
+## Local nightly build
+
+```bash
+./scripts/reloadn.sh [--tag <short-tag>]
+```
+
+Builds Release with the nightly channel identity ("cmux NIGHTLY", `com.cmuxterm.app.nightly`, `AppIcon-Nightly`, `cmux-nightly` URL scheme), mirroring the identity injection in `.github/workflows/nightly.yml`, then ad-hoc signs with the compatible local runtime/TCC entitlements, verifies both the staged and installed bundles, and performs a rollback-safe install to `~/Applications/cmux NIGHTLY.app`. Install elsewhere with `--install-dir`, or use `--no-install --no-launch` to validate without touching or stopping the running Nightly. A normal install requests a graceful quit and waits for the user to confirm cmux's close dialog; it never force-kills the app.
+
+The install step is the point: derived data lives in `/tmp`, so an app left there is lost on reboot or tmp cleanup. Do not hand-patch a Release build's Info.plist to fake the nightly channel — a partial patch (right bundle ID, stable icon, stable Sparkle feed) points the nightly at the stable appcast. `--tag` only scopes the derived data path; the identity stays on the nightly channel so the build matches what ships.
+
+A local nightly is ad-hoc signed and `spctl`-rejected, which does not prevent launching. Team-scoped Keychain and WebAuthn entitlements, Developer ID signing, and notarization stay in CI; local authentication uses the file-store fallback. Sparkle automatic checks are disabled, and the local build number is kept above current CI run-id-based versions so an official nightly is not immediately offered over the build under test.
+
 ## Sidebar extension tags
 
 Keep the extension-point ID, bundle-ID suffix and display-name suffix distinct
