@@ -89,7 +89,7 @@ extension CMUXCLI {
            currentPID == mapped?.pid,
            !codexLaunchHasExplicitPermissions(current),
            codexLaunchHasExplicitPermissions(mapped?.launchCommand) {
-            return mapped?.launchCommand
+            return canonicalizedCodexCustomPathLaunchCommand(mapped?.launchCommand)
         }
         let selected: AgentHookLaunchCommandRecord? = {
             let currentSource = normalizedHookValue(current?.source)?.lowercased()
@@ -121,7 +121,7 @@ extension CMUXCLI {
         }()
         guard kind == "codex" else { return selected }
         return repairedCodexLaunchCommand(
-            selected,
+            canonicalizedCodexCustomPathLaunchCommand(selected),
             transcriptPath: transcriptPath
         )
     }
@@ -179,8 +179,27 @@ extension CMUXCLI {
 
     private func codexLaunchEnvironmentIsWeak(_ environment: [String: String]?) -> Bool {
         normalizedHookValue(environment?["CODEX_HOME"]) == nil
+            && normalizedHookValue(environment?["CMUX_CUSTOM_CODEX_PATH"]) == nil
             && (normalizedHookValue(environment?["ANTHROPIC_BASE_URL"]) != nil
                 || normalizedHookValue(environment?["CLAUDE_CONFIG_DIR"]) != nil)
+    }
+
+    /// Keep the stored command provider-neutral while retaining the user's explicit Codex
+    /// executable selection in replay-safe environment. Restore and fork can then route the
+    /// logical `codex` executable through cmux's wrapper before that wrapper resolves the custom
+    /// path, preserving hook injection without persisting credentials supplied by the launcher.
+    private func canonicalizedCodexCustomPathLaunchCommand(
+        _ launchCommand: AgentHookLaunchCommandRecord?
+    ) -> AgentHookLaunchCommandRecord? {
+        guard var launchCommand,
+              AgentLaunchCaptureTrust.launcherDescribesKind(launchCommand.launcher, kind: "codex"),
+              !launchCommand.arguments.isEmpty,
+              normalizedHookValue(launchCommand.environment?["CMUX_CUSTOM_CODEX_PATH"]) != nil else {
+            return launchCommand
+        }
+        launchCommand.executablePath = nil
+        launchCommand.arguments[0] = "codex"
+        return launchCommand
     }
 
     /// A same-kind launch capture can inherit Claude account-selection environment from the
