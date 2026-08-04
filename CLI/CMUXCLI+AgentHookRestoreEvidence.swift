@@ -179,9 +179,23 @@ extension CMUXCLI {
 
     private func codexLaunchEnvironmentIsWeak(_ environment: [String: String]?) -> Bool {
         normalizedHookValue(environment?["CODEX_HOME"]) == nil
-            && normalizedHookValue(environment?["CMUX_CUSTOM_CODEX_PATH"]) == nil
             && (normalizedHookValue(environment?["ANTHROPIC_BASE_URL"]) != nil
                 || normalizedHookValue(environment?["CLAUDE_CONFIG_DIR"]) != nil)
+    }
+
+    private func matchingCodexCustomPath(
+        in launchCommand: AgentHookLaunchCommandRecord
+    ) -> String? {
+        guard let customPath = normalizedHookValue(
+            launchCommand.environment?["CMUX_CUSTOM_CODEX_PATH"]
+        ),
+        let capturedPath = normalizedHookValue(launchCommand.executablePath)
+            ?? normalizedHookValue(launchCommand.arguments.first),
+        (customPath as NSString).standardizingPath
+            == (capturedPath as NSString).standardizingPath else {
+            return nil
+        }
+        return customPath
     }
 
     /// Keep the stored command provider-neutral while retaining the user's explicit Codex
@@ -194,7 +208,7 @@ extension CMUXCLI {
         guard var launchCommand,
               AgentLaunchCaptureTrust.launcherDescribesKind(launchCommand.launcher, kind: "codex"),
               !launchCommand.arguments.isEmpty,
-              normalizedHookValue(launchCommand.environment?["CMUX_CUSTOM_CODEX_PATH"]) != nil else {
+              matchingCodexCustomPath(in: launchCommand) != nil else {
             return launchCommand
         }
         launchCommand.executablePath = nil
@@ -218,10 +232,11 @@ extension CMUXCLI {
               codexLaunchEnvironmentIsWeak(launchCommand.environment) else {
             return nil
         }
+        let customPath = matchingCodexCustomPath(in: launchCommand)
         launchCommand.executablePath = nil
         launchCommand.arguments[0] = "codex"
         launchCommand.workingDirectory = nil
-        launchCommand.environment = nil
+        launchCommand.environment = customPath.map { ["CMUX_CUSTOM_CODEX_PATH": $0] }
         return launchCommand
     }
 
