@@ -35,6 +35,10 @@ Read these before working in their scope; nested files may not load automaticall
 - `web/` or any cmux Cloud database work: [web/AGENTS.md](web/AGENTS.md).
 - `cmux-tui/`: [cmux-tui/AGENTS.md](cmux-tui/AGENTS.md).
 
+Other variants: `reloadp.sh` (Release), `reloads.sh` (Release as isolated "cmux STAGING"), `reload2.sh --tag <tag>` (both), `reloadn.sh` (Release on the nightly channel).
+
+`reloadn.sh` is the local counterpart of the identity injection in `.github/workflows/nightly.yml`: it builds Release with `AppIcon-Nightly`, stamps the nightly identity ("cmux NIGHTLY", `com.cmuxterm.app.nightly`, `cmux-nightly` URL scheme, nightly appcast with automatic checks off), ad-hoc signs with the compatible local runtime/TCC entitlements, verifies the staged and installed bundles, and performs a rollback-safe install to `~/Applications/cmux NIGHTLY.app` so the build survives reboots and `/tmp` cleanup. Derived data still lives in `/tmp`. Team-scoped Keychain and WebAuthn entitlements, Developer ID signing, and notarization stay in CI. Use `--no-install --no-launch` to validate a build without stopping the running Nightly. A normal install requests a graceful quit and waits for the user to confirm cmux's close dialog; it never force-kills the app.
+
 ## Contributions and publication
 
 Before fixing a bug or adding a feature, search open upstream PRs by symptom or
