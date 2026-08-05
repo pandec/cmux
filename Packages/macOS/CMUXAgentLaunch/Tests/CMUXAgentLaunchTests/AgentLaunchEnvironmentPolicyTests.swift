@@ -102,4 +102,16 @@ struct AgentLaunchEnvironmentPolicyTests {
             "CMUX_CUSTOM_CODEX_PATH": "/Users/example/.local/libexec/cliproxy/codex",
         ])
     }
+
+    @Test("Does not replay a custom Codex executable for other agents")
+    func customCodexExecutableIsScopedToCodex() {
+        let selected = AgentLaunchEnvironmentPolicy().selectedEnvironment(
+            from: [
+                "CMUX_CUSTOM_CODEX_PATH": "/Users/example/.local/libexec/cliproxy/codex",
+            ],
+            kind: "claude"
+        )
+
+        #expect(selected.isEmpty)
+    }
 }

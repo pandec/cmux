@@ -3700,6 +3700,14 @@ final class CLINotifyProcessIntegrationTests: XCTestCase {
             "ANTHROPIC_MODEL",
             "CLAUDE_CONFIG_DIR",
             "CMUX_CUSTOM_CLAUDE_PATH",
+            "CMUX_CUSTOM_CODEX_PATH",
+            "CODEX_CI",
+            "CODEX_MANAGED_BY_BUN",
+            "CODEX_MANAGED_BY_NPM",
+            "CODEX_MANAGED_PACKAGE_ROOT",
+            "CODEX_SANDBOX",
+            "CODEX_SESSION_ID",
+            "CODEX_THREAD_ID",
             "NODE_OPTIONS",
             "OPENCODE_CONFIG_DIR"
         ] {
@@ -3739,7 +3747,10 @@ final class CLINotifyProcessIntegrationTests: XCTestCase {
         let data = try Data(contentsOf: storeURL)
         let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data, options: []) as? [String: Any])
         let sessions = try XCTUnwrap(json["sessions"] as? [String: Any])
-        let session = try XCTUnwrap(sessions[surfaceId] as? [String: Any])
+        let session = try XCTUnwrap(
+            sessions[surfaceId] as? [String: Any],
+            "Expected session \(surfaceId); stored keys: \(sessions.keys.sorted())"
+        )
         let launchCommand = try XCTUnwrap(session["launchCommand"] as? [String: Any])
         let persistedEnvironment = try XCTUnwrap(launchCommand["environment"] as? [String: String])
         XCTAssertEqual(persistedEnvironment, ["CODEX_HOME": "/tmp/codex home"])
