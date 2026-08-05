@@ -18,7 +18,10 @@ extension AppDelegate {
             let command: DockShortcutCommand = direction == .forward
                 ? .selectNextSurface
                 : .selectPreviousSurface
-            if performFocusedDockShortcut(command, event: event) { return true }
+            let action: KeyboardShortcutSettings.Action = direction == .forward
+                ? .cycleSurfaceForward
+                : .cycleSurfaceBackward
+            if performFocusedDockShortcut(command, action: action, event: event) { return true }
             let manager = preferredMainWindowContextForShortcutRouting(event: event)?.tabManager ?? tabManager
             if direction == .forward {
                 manager?.selectNextSurface()
