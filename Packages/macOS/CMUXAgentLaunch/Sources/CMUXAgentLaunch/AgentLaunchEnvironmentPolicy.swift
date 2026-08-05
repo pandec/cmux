@@ -144,6 +144,9 @@ public struct AgentLaunchEnvironmentPolicy: Sendable {
                 result.removeValue(forKey: key)
             }
         }
+        if normalizedKind != "codex" {
+            result.removeValue(forKey: "CMUX_CUSTOM_CODEX_PATH")
+        }
         return result
     }
 
