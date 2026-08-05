@@ -723,6 +723,7 @@ struct DockShortcutRoutingTests {
                     option: false,
                     control: true
                 )
+                KeyboardShortcutSettings.setShortcut(.unbound, for: .cycleSurfaceForward)
                 KeyboardShortcutSettings.setShortcut(controlTab, for: .toggleTerminalCopyMode)
 
                 _ = Self.dispatch(controlTab, in: harness)
