@@ -14,6 +14,7 @@ extension KeyboardShortcutSettings.Action {
         switch self {
         case .triggerFlash,
              .nextSurface, .prevSurface,
+             .cycleSurfaceForward, .cycleSurfaceBackward,
              .moveSurfaceLeft, .moveSurfaceRight,
              .moveSurfaceToPreviousPane, .moveSurfaceToNextPane,
              .moveSurfaceToPaneLeft, .moveSurfaceToPaneRight,
