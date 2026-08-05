@@ -73,6 +73,7 @@ public struct AgentLaunchEnvironmentPolicy: Sendable {
         "CLAUDE_SECURESTORAGE_CONFIG_DIR",
         "CMUX_CUSTOM_CLAUDE_PATH",
         "CMUX_CUSTOM_AMP_PATH",
+        "CMUX_CUSTOM_CODEX_PATH",
         "CMUX_ROVODEV_SESSIONS_DIR",
         "CODEX_HOME",
         "CODEBUDDY_BASE_URL",
@@ -147,6 +148,9 @@ public struct AgentLaunchEnvironmentPolicy: Sendable {
             for key in Self.campfireManagedEnvironmentKeys {
                 result.removeValue(forKey: key)
             }
+        }
+        if normalizedKind != "codex" {
+            result.removeValue(forKey: "CMUX_CUSTOM_CODEX_PATH")
         }
         return result
     }
