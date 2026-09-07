@@ -221,14 +221,15 @@ test("release gate iOS build is isolated from the configured default iPhone", ()
   ].join("\n"));
 });
 
-test("iOS release artifact gate rejects staged runtime origins", (t) => {
+for (const bundleId of ["dev.cmux.app.internal", "com.pandec.tools.cmux"]) {
+test(`iOS release artifact gate rejects staged runtime origins for ${bundleId}`, (t) => {
   const directory = fixtureDirectory();
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const app = path.join(directory, "cmux.app");
   const args = ["scripts/lib/verify-ios-release-origins.sh", "--app", app];
 
   writeGateAppPlist(app, {
-    CFBundleIdentifier: "dev.cmux.app.internal",
+    CFBundleIdentifier: bundleId,
     CMUXAuthEnvironment: "production",
     CMUXApiBaseURL: "https://cmux.com",
     CMUXIrohBrokerBaseURL: "https://cmux.com",
@@ -239,7 +240,7 @@ test("iOS release artifact gate rejects staged runtime origins", (t) => {
   assert.equal(valid.status, 0, valid.stderr);
 
   writeGateAppPlist(app, {
-    CFBundleIdentifier: "dev.cmux.app.internal",
+    CFBundleIdentifier: bundleId,
     CMUXAuthEnvironment: "production",
     CMUXApiBaseURL: "https://cmux.com",
     CMUXIrohBrokerBaseURL: "https://cmux-staging.vercel.app",
@@ -250,6 +251,7 @@ test("iOS release artifact gate rejects staged runtime origins", (t) => {
   assert.notEqual(invalid.status, 0);
   assert.match(invalid.stderr, /CMUXIrohBrokerBaseURL/u);
 });
+}
 
 test("production release gate gives its account helper a normalized protected state directory", (t) => {
   const directory = fixtureDirectory();
