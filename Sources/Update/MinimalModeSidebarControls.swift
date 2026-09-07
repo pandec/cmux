@@ -47,6 +47,7 @@ enum MinimalModeSidebarTitlebarControlsLayout {
                 .toggleSidebar,
                 .showNotifications,
                 .newTab,
+                .newWorkspaceMenu,
                 .focusHistoryBack,
                 .focusHistoryForward,
             ]
