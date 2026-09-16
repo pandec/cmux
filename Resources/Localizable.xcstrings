@@ -305187,6 +305187,48 @@
     "settings.app.surfaceCycleOrder": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reihenfolge beim Flächenwechsel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordre de parcours des surfaces"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترتيب التنقل بين المساحات"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orden de alternancia de superficies"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "介面切換順序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面切换顺序"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 전환 순서"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -305204,6 +305246,48 @@
     "settings.app.surfaceCycleOrder.mostRecentlyUsed": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zuletzt verwendet"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisées récemment"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المستخدمة مؤخرًا"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usadas recientemente"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近使用"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "最近使用"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "최근 사용"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -305221,6 +305305,48 @@
     "settings.app.surfaceCycleOrder.subtitle": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle, ob die Tastenkürzel zum Flächenwechsel der Tab-Reihenfolge oder dem letzten Fokusverlauf folgen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez si les raccourcis de parcours des surfaces suivent l’ordre des onglets ou l’historique récent du focus."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختر ما إذا كانت اختصارات التنقل بين المساحات تتبع ترتيب علامات التبويب أو سجل التركيز الأخير."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige si los atajos para alternar superficies siguen el orden de las pestañas o el historial de enfoque reciente."
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "選擇介面切換快捷鍵要依照分頁列順序，還是最近的焦點記錄。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择界面切换快捷键是按照标签栏顺序，还是最近的焦点记录。"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 전환 단축키가 탭 표시줄 순서 또는 최근 포커스 기록을 따를지 선택합니다."
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -305238,6 +305364,48 @@
     "settings.app.surfaceCycleOrder.tabOrder": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tab-Reihenfolge"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ordre des onglets"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترتيب علامات التبويب"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orden de pestañas"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "分頁順序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "标签顺序"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "탭 순서"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -353844,6 +354012,48 @@
     "settings.search.alias.setting.app.surface-cycle-order": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder Flächenwechsel Reihenfolge Strg-Tab zuletzt verwendet MRU Tab-Reihenfolge"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder parcours surfaces ordre ctrl-tab utilisées récemment MRU ordre onglets"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder التنقل بين المساحات ترتيب ctrl-tab المستخدمة مؤخرًا mru ترتيب علامات التبويب"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder alternar superficies orden ctrl-tab usadas recientemente mru orden pestañas"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder 介面 切換 順序 ctrl-tab control-tab 最近使用 mru 分頁順序"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder 界面 切换 顺序 ctrl-tab control-tab 最近使用 mru 标签顺序"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "app.surfaceCycleOrder 화면 전환 순서 ctrl-tab control-tab 최근 사용 mru 탭 순서"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -386112,6 +386322,48 @@
     "shortcut.cycleSurfaceBackward.label": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flächen rückwärts durchlaufen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcourir les surfaces en arrière"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التنقل بين المساحات للخلف"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alternar superficies hacia atrás"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反向切換介面"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "反向切换界面"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 역방향 전환"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -386129,6 +386381,48 @@
     "shortcut.cycleSurfaceForward.label": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Flächen vorwärts durchlaufen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parcourir les surfaces en avant"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "التنقل بين المساحات للأمام"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alternar superficies hacia delante"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正向切換介面"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正向切换界面"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "화면 정방향 전환"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -459118,6 +459412,48 @@
     "titlebar.moreControls.accessibilityLabel": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weitere Steuerelemente"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autres commandes"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "المزيد من عناصر التحكم"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más controles"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多控制項"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "更多控件"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "추가 컨트롤"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
@@ -459135,6 +459471,48 @@
     "titlebar.moreControls.tooltip": {
       "extractionState": "manual",
       "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titelleisten-Steuerelemente anzeigen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher les commandes de la barre de titre"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار عناصر التحكم في شريط العنوان"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar controles de la barra de título"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "顯示標題列控制項"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示标题栏控件"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제목 표시줄 컨트롤 표시"
+          }
+        },
         "en": {
           "stringUnit": {
             "state": "translated",
