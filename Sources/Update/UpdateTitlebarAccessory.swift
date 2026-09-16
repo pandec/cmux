@@ -1714,7 +1714,11 @@ struct HiddenTitlebarSidebarControlsView: View {
             }
         ) {
             ZStack(alignment: .topTrailing) {
-                CmuxSystemSymbolImage(systemName: "ellipsis", pointSize: config.iconSize, weight: .semibold)
+                TitlebarControlSymbol(
+                    systemName: "ellipsis",
+                    config: config,
+                    foregroundColor: Color(nsColor: titlebarControlForegroundNSColor(opacity: 1.0))
+                )
                     .frame(width: config.buttonSize, height: config.buttonSize)
 
                 if unreadModel.totalUnreadCount > 0 {
