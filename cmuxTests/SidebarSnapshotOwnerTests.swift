@@ -79,6 +79,7 @@ struct SidebarSnapshotOwnerTests {
             onSendFeedback: {}, onToggleSidebar: {}, onNewTab: {},
             observedWindowReference: WeakWindowReference(),
             chromeBackgroundColor: .black,
+            isFullScreen: false,
             selection: .constant(.tabs),
             selectedTabIds: .constant([]),
             lastSidebarSelectionIndex: .constant(nil),
