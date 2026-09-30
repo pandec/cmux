@@ -742,6 +742,13 @@ enum CmuxEmbeddedConfigSchema {
           "type": "boolean",
           "default": false,
           "description": "Search every surface in the command palette switcher instead of only the active workspace."
+        },
+        "surfaceCycleOrder": {
+          "type": "string",
+          "enum": ["tabOrder", "mostRecentlyUsed"],
+          "default": "tabOrder",
+          "descriptionKey": "schemaDescriptions.app.surfaceCycleOrder",
+          "description": "Choose whether the Cycle Surfaces shortcuts follow visual tab order or most-recently-used focus order."
         }
       }
     },
@@ -2079,6 +2086,8 @@ enum CmuxEmbeddedConfigSchema {
               "triggerFlash",
               "nextSurface",
               "prevSurface",
+              "cycleSurfaceForward",
+              "cycleSurfaceBackward",
               "moveSurfaceLeft",
               "moveSurfaceRight",
               "moveSurfaceToPreviousPane",
