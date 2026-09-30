@@ -1558,6 +1558,7 @@ private struct MinimalModeTitlebarButtonHitRegionView: NSViewRepresentable {
 }
 
 struct HiddenTitlebarSidebarControlsView: View {
+    @Environment(\.cmuxAccentColor) private var cmuxAccent
     let unreadModel: SidebarUnreadModel
     let layoutModel: TitlebarControlsLayoutModel
     let presentation: MinimalModeSidebarTitlebarControlsPresentation
@@ -1728,7 +1729,7 @@ struct HiddenTitlebarSidebarControlsView: View {
                         .cmuxFont(size: badgeBaseFontSize, weight: .semibold)
                         .foregroundColor(.white)
                         .frame(width: config.badgeSize, height: config.badgeSize)
-                        .background(Circle().fill(cmuxAccentColor()))
+                        .background(Circle().fill(cmuxAccent.color))
                         .offset(x: config.badgeOffset.width, y: config.badgeOffset.height)
                 }
             }
