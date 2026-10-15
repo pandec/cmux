@@ -1794,7 +1794,8 @@ extension AppDelegate {
         case .newTab:
             _ = performNewWorkspaceAction(
                 tabManager: context.tabManager,
-                debugSource: "titlebar.minimalSidebarControl"
+                debugSource: "titlebar.minimalSidebarControl",
+                localOnly: true
             )
         case .newWorkspaceMenu:
             _ = showNewWorkspaceContextMenu(
